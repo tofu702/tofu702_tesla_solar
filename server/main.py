@@ -1,3 +1,4 @@
+import fastapi.staticfiles
 from fastapi import FastAPI
 import server.lib.sun_data
 
@@ -23,6 +24,9 @@ class SunStatsForRangeResponse(pydantic.BaseModel):
 async def read_root():
     """Says Hello World"""
     return {"Hello": "World"}
+
+app.mount("/static", fastapi.staticfiles.StaticFiles(directory="static"), name="static")
+
 
 # Health check endpoint
 @app.get("/health")
