@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day Length Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .control-group {
+            margin: 10px;
+            display: inline-block;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Day Length Data</h1>
+        <p>This graph shows day length over the course of a month.</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="yearSelect">Select Year:</label>
+                <select id="yearSelect">
+                    <option value="2023">2023</option>
+                    <option value="2024" selected>2024</option>
+                    <option value="2025">2025</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="monthSelect">Select Month:</label>
+                <select id="monthSelect">
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <br>
+                <button id="updateChartBtn">Update Chart</button>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="dayLengthChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Function to fetch day length data from the API
+        const fetchDayLengthData = async (year, month) => {
+            try {
+                // Calculate start and end dates for the month
+                const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+                
+                // Call the API endpoint
+                const response = await fetch(`/sun/range?start_date=${startDate}&end_date=${endDate}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Extract labels and day length data
+                const labels = [];
+                const dayLengths = [];
+                
+                // Process the data from the API response
+                for (const [date, stats] of Object.entries(data.days_to_stats)) {
+                    labels.push(parseInt(date.split('-')[2])); // Extract day number
+                    dayLengths.push(stats.day_length_hours); // Get day length in hours
+                }
+                
+                return { labels, dayLengths };
+            } catch (error) {
+                console.error('Error fetching day length data:', error);
+                // Return sample data as fallback
+                return generateSampleData(year, month);
+            }
+        };
+
+        // Generate sample data as fallback
+        const generateSampleData = (year, month) => {
+            const labels = [];
+            const data = [];
+            
+            // Get number of days in the selected month
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Generate data for the specified number of days
+            for (let i = 1; i <= daysInMonth; i++) {
+                labels.push(i);
+                // Generate fake day length data (between 8-16 hours)
+                data.push(Math.floor(Math.random() * 8) + 8);
+            }
+            
+            return { labels, data };
+        };
+
+        // Get initial data
+        const initialData = generateSampleData(2024, 0); // Default to January 2024
+
+        // Create the chart
+        const ctx = document.getElementById('dayLengthChart').getContext('2d');
+        const dayLengthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: initialData.labels,
+                datasets: [{
+                    label: 'Day Length (hours)',
+                    data: initialData.dayLengths,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Day Length Over Time'
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Day of Month'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Day Length (hours)'
+                        },
+                        min: 0,
+                        max: 24
+                    }
+                }
+            }
+        });
+
+        // Function to update chart with new data
+        const updateChartWithData = async () => {
+            const yearSelect = document.getElementById('yearSelect');
+            const monthSelect = document.getElementById('monthSelect');
+            
+            const year = parseInt(yearSelect.value);
+            const month = parseInt(monthSelect.value);
+            
+            const newData = await fetchDayLengthData(year, month);
+            dayLengthChart.data.labels = newData.labels;
+            dayLengthChart.data.datasets[0].data = newData.dayLengths;
+            dayLengthChart.options.plugins.title.text = `Day Length for ${monthSelect.options[monthSelect.selectedIndex].text} ${year}`;
+            
+            // Dynamically adjust Y-axis scale based on data
+            if (newData.dayLengths.length > 0) {
+                const minDayLength = Math.min(...newData.dayLengths);
+                const maxDayLength = Math.max(...newData.dayLengths);
+                
+                // Set Y-axis min and max with some padding
+                dayLengthChart.options.scales.y.min = Math.max(0, minDayLength - 0.5);
+                dayLengthChart.options.scales.y.max = Math.min(24, maxDayLength + 0.5);
+            }
+            
+            dayLengthChart.update();
+        };
+
+        // Add event listener to update button
+        document.getElementById('updateChartBtn').addEventListener('click', updateChartWithData);
+
+        // Initial chart rendering
+        updateChartWithData();
+    </script>
+</body>
+</html>
