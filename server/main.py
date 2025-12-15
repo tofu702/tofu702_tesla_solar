@@ -23,6 +23,8 @@ class SunStatsForRangeResponse(pydantic.BaseModel):
 #    return {"message": "Welcome to the Barebones FastAPI Server"}
 async def read_root():
     """Says Hello World"""
+
+    return fastapi.responses.RedirectResponse("static/main.html")
     return {"Hello": "World"}
 
 app.mount("/static", fastapi.staticfiles.StaticFiles(directory="static"), name="static")
