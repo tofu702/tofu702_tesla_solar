@@ -66,9 +66,9 @@
             <div class="control-group">
                 <label for="yearSelect">Select Year:</label>
                 <select id="yearSelect">
-                    <option value="2023">2023</option>
-                    <option value="2024" selected>2024</option>
-                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                    <option value="2026">2026</option>
                 </select>
             </div>
             
@@ -99,10 +99,14 @@
         <div class="chart-container">
             <canvas id="dayLengthChart"></canvas>
         </div>
+        <div class="chart-container">
+            <canvas id="solarDataChart"></canvas>
+        </div>
     </div>
 
     <script>
         let dayLengthChart = null;
+        let solarDataChart = null;
 
         // Function to fetch day length data from the API
         const fetchDayLengthData = async (year, month) => {
@@ -139,6 +143,41 @@
             }
         };
 
+        const fetchSolarStats = async (year, month) => {
+            try {
+                // Calculate start and end dates for the month
+                const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+
+                // Call the API endpoint
+                const response = await fetch(`/day_data/range?start_date=${startDate}&end_date=${endDate}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const solar_data = await response.json();
+
+                // Extract labels and day length data
+                const labels = [];
+                const solar_energy_kwh = [];
+
+                // Process the data from the API response
+                for (const [date, data] of Object.entries(solar_data.days_to_data)) {
+                    labels.push(parseInt(date.split('-')[2])); // Extract day number
+                    solar_energy_kwh.push(data.solar_energy_kwh);
+                }
+
+                return { labels, solar_energy_kwh };
+            } catch (error) {
+                console.error('Error fetching solar data:', error);
+                // Return sample data as fallback
+                return generateSampleData(year, month);
+            }
+        };
+
+
         // Generate sample data as fallback
         const generateSampleData = (year, month) => {
             const labels = [];
@@ -157,7 +196,7 @@
             return { labels, data };
         };
 
-       function createChart () {
+       function createDayLengthChart () {
              // Get initial data
             const initialData = generateSampleData(2024, 0); // Default to January 2024
 
@@ -210,24 +249,77 @@
             });
        }
 
+       function createSolarDataChart () {
+             // Get initial data
+            const initialData = generateSampleData(2024, 0); // Default to January 2024
+
+            // Create the chart
+            const ctx = document.getElementById('solarDataChart').getContext('2d');
+            solarDataChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: initialData.labels,
+                    datasets: [{
+                        label: 'Solar Data',
+                        data: initialData.data,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Solar Production (kWH) By Day'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day of Month'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Solar kWh'
+                            },
+                            min: 0,
+                            max: 50
+                        }
+                    }
+                }
+            });
+       }
+
 
         // Function to update chart with new data
-        const updateChartWithData = async () => {
+        const updateChartsWithData = async () => {
             const yearSelect = document.getElementById('yearSelect');
             const monthSelect = document.getElementById('monthSelect');
             
             const year = parseInt(yearSelect.value);
             const month = parseInt(monthSelect.value);
             
-            const newData = await fetchDayLengthData(year, month);
-            dayLengthChart.data.labels = newData.labels;
-            dayLengthChart.data.datasets[0].data = newData.dayLengths;
+            const newDayLengthData = await fetchDayLengthData(year, month);
+            dayLengthChart.data.labels = newDayLengthData.labels;
+            dayLengthChart.data.datasets[0].data = newDayLengthData.dayLengths;
             dayLengthChart.options.plugins.title.text = `Day Length for ${monthSelect.options[monthSelect.selectedIndex].text} ${year}`;
-            
+
             // Dynamically adjust Y-axis scale based on data
-            if (newData.dayLengths.length > 0) {
-                const minDayLength = Math.min(...newData.dayLengths);
-                const maxDayLength = Math.max(...newData.dayLengths);
+            if (newDayLengthData.dayLengths.length > 0) {
+                const minDayLength = Math.min(...newDayLengthData.dayLengths);
+                const maxDayLength = Math.max(...newDayLengthData.dayLengths);
                 
                 // Set Y-axis min and max with some padding
                 dayLengthChart.options.scales.y.min = Math.max(0, minDayLength - 0.5);
@@ -235,15 +327,23 @@
             }
             
             dayLengthChart.update();
+
+            const newSolarStats = await fetchSolarStats(year, month);
+            solarDataChart.data.labels = newSolarStats.labels;
+            solarDataChart.data.datasets[0].data = newSolarStats.solar_energy_kwh;
+            solarDataChart.options.plugins.title.text = `Day Length for ${monthSelect.options[monthSelect.selectedIndex].text} ${year}`;
+
+            solarDataChart.update();
         };
 
         // Add event listener to update button
-        document.getElementById('updateChartBtn').addEventListener('click', updateChartWithData);
+        document.getElementById('updateChartBtn').addEventListener('click', updateChartsWithData);
 
-        createChart();
+        createDayLengthChart();
+        createSolarDataChart();
 
         // Initial chart rendering
-        updateChartWithData();
+        updateChartsWithData();
     </script>
 </body>
 </html>
