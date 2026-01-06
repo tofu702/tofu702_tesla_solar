@@ -12,12 +12,17 @@
             background-color: #f5f5f5;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1400px; /* Increased width to accommodate sidebar */
             margin: 0 auto;
             background-color: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+        }
+        .main-content {
+            flex: 1; /* Takes remaining space */
         }
         h1 {
             color: #333;
@@ -55,69 +60,105 @@
             height: 400px;
             margin-top: 20px;
         }
+        .checkbox-sidebar {
+            width: 250px; /* Fixed width sidebar */
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            height: fit-content; /* Make sidebar adjust to content height */
+        }
         .checkbox-container {
             margin: 10px 0;
-            text-align: center;
         }
         .checkbox-container label {
-            display: inline-block;
-            margin: 0 10px;
+            display: block;
+            margin: 10px 0;
             font-weight: normal;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .checkbox-sidebar {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Unified Solar and Day Length Data</h1>
-        <p>This graph shows both day length and solar production data on a single chart.</p>
-        
-        <div class="controls">
-            <div class="control-group">
-                <label for="yearSelect">Select Year:</label>
-                <select id="yearSelect">
-                    <option value="2024">2024</option>
-                    <option value="2025" selected>2025</option>
-                    <option value="2026">2026</option>
-                </select>
+        <div class="main-content">
+            <h1>Unified Solar and Day Length Data</h1>
+            <p>This graph shows both day length and solar production data on a single chart.</p>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="yearSelect">Select Year:</label>
+                    <select id="yearSelect">
+                        <option value="2024">2024</option>
+                        <option value="2025" selected>2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="monthSelect">Select Month:</label>
+                    <select id="monthSelect">
+                        <option value="0">January</option>
+                        <option value="1">February</option>
+                        <option value="2">March</option>
+                        <option value="3">April</option>
+                        <option value="4">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <br>
+                    <button id="updateChartBtn">Update Chart</button>
+                </div>
             </div>
             
-            <div class="control-group">
-                <label for="monthSelect">Select Month:</label>
-                <select id="monthSelect">
-                    <option value="0">January</option>
-                    <option value="1">February</option>
-                    <option value="2">March</option>
-                    <option value="3">April</option>
-                    <option value="4">May</option>
-                    <option value="5">June</option>
-                    <option value="6">July</option>
-                    <option value="7">August</option>
-                    <option value="8">September</option>
-                    <option value="9">October</option>
-                    <option value="10">November</option>
-                    <option value="11">December</option>
-                </select>
-            </div>
-            
-            <div class="control-group">
-                <br>
-                <button id="updateChartBtn">Update Chart</button>
+            <div class="chart-container">
+                <canvas id="unifiedChart"></canvas>
             </div>
         </div>
         
-        <div class="checkbox-container">
-            <label>
-                <input type="checkbox" id="showDayLength" checked>
-                Show Day Length
-            </label>
-            <label>
-                <input type="checkbox" id="showSolarData" checked>
-                Show Solar Data
-            </label>
-        </div>
-        
-        <div class="chart-container">
-            <canvas id="unifiedChart"></canvas>
+        <div class="checkbox-sidebar">
+            <h3>Chart Visibility Controls</h3>
+            <div class="checkbox-container">
+                <label>
+                    <input type="checkbox" id="showDayLength" checked>
+                    Show Day Length
+                </label>
+                <label>
+                    <input type="checkbox" id="showSolarData" checked>
+                    Show Solar Data
+                </label>
+                <label>
+                    <input type="checkbox" id="showHomeUsage" checked>
+                    Show Home Usage
+                </label>
+                <label>
+                    <input type="checkbox" id="showGridUsage" checked>
+                    Show Grid Usage
+                </label>
+                <label>
+                    <input type="checkbox" id="showGridExports" checked>
+                    Show Grid Exports
+                </label>
+                <label>
+                    <input type="checkbox" id="showPowerwallUsage" checked>
+                    Show Powerwall Usage
+                </label>
+            </div>
         </div>
     </div>
 
@@ -158,7 +199,7 @@
             }
         };
 
-        const fetchSolarStats = async (year, month) => {
+const fetchSolarStats = async (year, month) => {
             try {
                 // Calculate start and end dates for the month
                 const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -174,26 +215,34 @@
 
                 const solar_data = await response.json();
 
-                // Extract labels and day length data
+                // Extract labels and all energy data
                 const labels = [];
                 const solar_energy_kwh = [];
+                const home_kwh = [];
+                const from_grid_kwh = [];
+                const to_grid_kwh = [];
+                const from_powerwall_kwh = [];
 
                 // Process the data from the API response
                 for (const [date, data] of Object.entries(solar_data.days_to_data)) {
                     labels.push(parseInt(date.split('-')[2])); // Extract day number
                     solar_energy_kwh.push(data.solar_energy_kwh);
+                    home_kwh.push(data.home_kwh);
+                    from_grid_kwh.push(data.from_grid_kwh);
+                    to_grid_kwh.push(data.to_grid_kwh);
+                    from_powerwall_kwh.push(data.from_powerwall_kwh);
                 }
 
-                return { labels, solar_energy_kwh };
+                return { labels, solar_energy_kwh, home_kwh, from_grid_kwh, to_grid_kwh, from_powerwall_kwh };
             } catch (error) {
                 console.error('Error fetching solar data:', error);
-                return {labels: [], solar_energy_kwh: []};
+                return {labels: [], solar_energy_kwh: [], home_kwh: [], from_grid_kwh: [], to_grid_kwh: [], from_powerwall_kwh: []};
             }
         };
 
         // Function to create a unified chart with dual y-axes
         function createUnifiedChart() {
-            const initialData = {labels: [], dayLengths: [], solar_energy_kwh: []};
+            const initialData = {labels: [], dayLengths: [], solar_energy_kwh: [], home_kwh: [], from_grid_kwh: [], to_grid_kwh: [], from_powerwall_kwh: []};
 
             // Create the chart
             const ctx = document.getElementById('unifiedChart').getContext('2d');
@@ -223,6 +272,50 @@
                             tension: 0.1,
                             yAxisID: 'y2', // Use primary y-axis
                             hidden: false
+                        },
+                        {
+                            label: 'Home Usage (kWh)',
+                            data: initialData.home_kwh,
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            yAxisID: 'y2', // Use primary y-axis
+                            hidden: true
+                        },
+                        {
+                            label: 'Grid Usage (kWh)',
+                            data: initialData.from_grid_kwh,
+                            borderColor: 'rgb(255, 205, 86)',
+                            backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            yAxisID: 'y2', // Use primary y-axis
+                            hidden: true
+                        },
+                        {
+                            label: 'Grid Exports (kWh)',
+                            data: initialData.to_grid_kwh,
+                            borderColor: 'rgb(153, 102, 255)',
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            yAxisID: 'y2', // Use primary y-axis
+                            hidden: true
+                        },
+                        {
+                            label: 'Powerwall Usage (kWh)',
+                            data: initialData.from_powerwall_kwh,
+                            borderColor: 'rgb(255, 159, 64)',
+                            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            yAxisID: 'y2', // Use primary y-axis
+                            hidden: true
                         }
                     ]
                 },
@@ -258,7 +351,7 @@
                         y2: {
                             title: {
                                 display: true,
-                                text: 'Solar kWh'
+                                text: 'Energy (kWh)'
                             },
                             position: 'right',
                             min: 0,
@@ -285,6 +378,10 @@
             unifiedChart.data.labels = newDayLengthData.labels;
             unifiedChart.data.datasets[0].data = newDayLengthData.dayLengths;
             unifiedChart.data.datasets[1].data = newSolarStats.solar_energy_kwh;
+            unifiedChart.data.datasets[2].data = newSolarStats.home_kwh;
+            unifiedChart.data.datasets[3].data = newSolarStats.from_grid_kwh;
+            unifiedChart.data.datasets[4].data = newSolarStats.to_grid_kwh;
+            unifiedChart.data.datasets[5].data = newSolarStats.from_powerwall_kwh;
             
             // Update chart title
             unifiedChart.options.plugins.title.text = `Day Length and Solar Production for ${monthSelect.options[monthSelect.selectedIndex].text} ${year}`;
@@ -299,10 +396,18 @@
                 unifiedChart.options.scales.y1.max = Math.min(24, maxDayLength + 0.5);
             }
             
-            // For solar data, set max dynamically
+            // For all energy data, set max dynamically
             if (newSolarStats.solar_energy_kwh.length > 0) {
-                const maxSolar = Math.max(...newSolarStats.solar_energy_kwh);
-                unifiedChart.options.scales.y2.max = maxSolar * 1.1; // Add 10% padding
+                // Find the maximum value among all energy datasets
+                const maxValues = [
+                    Math.max(...newSolarStats.solar_energy_kwh),
+                    Math.max(...newSolarStats.home_kwh),
+                    Math.max(...newSolarStats.from_grid_kwh),
+                    Math.max(...newSolarStats.to_grid_kwh),
+                    Math.max(...newSolarStats.from_powerwall_kwh)
+                ];
+                const maxEnergy = Math.max(...maxValues);
+                unifiedChart.options.scales.y2.max = maxEnergy * 1.1; // Add 10% padding
             }
             
             unifiedChart.update();
@@ -312,9 +417,17 @@
         function toggleChartVisibility() {
             const showDayLength = document.getElementById('showDayLength').checked;
             const showSolarData = document.getElementById('showSolarData').checked;
+            const showHomeUsage = document.getElementById('showHomeUsage').checked;
+            const showGridUsage = document.getElementById('showGridUsage').checked;
+            const showGridExports = document.getElementById('showGridExports').checked;
+            const showPowerwallUsage = document.getElementById('showPowerwallUsage').checked;
             
             unifiedChart.data.datasets[0].hidden = !showDayLength;
             unifiedChart.data.datasets[1].hidden = !showSolarData;
+            unifiedChart.data.datasets[2].hidden = !showHomeUsage;
+            unifiedChart.data.datasets[3].hidden = !showGridUsage;
+            unifiedChart.data.datasets[4].hidden = !showGridExports;
+            unifiedChart.data.datasets[5].hidden = !showPowerwallUsage;
             
             unifiedChart.update();
         }
@@ -325,6 +438,10 @@
         // Add event listeners to checkboxes
         document.getElementById('showDayLength').addEventListener('change', toggleChartVisibility);
         document.getElementById('showSolarData').addEventListener('change', toggleChartVisibility);
+        document.getElementById('showHomeUsage').addEventListener('change', toggleChartVisibility);
+        document.getElementById('showGridUsage').addEventListener('change', toggleChartVisibility);
+        document.getElementById('showGridExports').addEventListener('change', toggleChartVisibility);
+        document.getElementById('showPowerwallUsage').addEventListener('change', toggleChartVisibility);
 
         createUnifiedChart();
         
