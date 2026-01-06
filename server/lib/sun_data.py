@@ -21,7 +21,6 @@ def compute_noon_altitude_deg(latitude, longitude, sun_times: typing.Dict[str, d
     solar_noon_utc = sun_times["solar_noon"].replace(tzinfo=datetime.UTC)
     solar_noon_position = suncalc.get_position(solar_noon_utc, longitude, latitude)
     noon_alt_deg = rad_to_deg(solar_noon_position["altitude"])
-    print("Noon: %s" % solar_noon_utc)
     return noon_alt_deg
 
 def convert_to_tz(dt:datetime.datetime, timezone: datetime.tzinfo) -> datetime.datetime:

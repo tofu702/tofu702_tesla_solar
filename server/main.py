@@ -24,13 +24,8 @@ class DayDataForRangeResponse(pydantic.BaseModel):
 
 # Root endpoint
 @app.get("/")
-#async def root():
-#    return {"message": "Welcome to the Barebones FastAPI Server"}
 async def read_root():
-    """Says Hello World"""
-
     return fastapi.responses.RedirectResponse("static/main.html")
-    return {"Hello": "World"}
 
 app.mount("/static", fastapi.staticfiles.StaticFiles(directory="static"), name="static")
 
@@ -80,9 +75,3 @@ async def day_data_for_range(start_date: str, end_date: str):
     all_day_data = parser.data_for_date_range(start_date_d, end_date_d)
     days_to_data = dict([(x.date.strftime(format), x) for x in all_day_data])
     return DayDataForRangeResponse(days_to_data=days_to_data)
-
-
-# Example API endpoint
-# @app.get("/items/{item_id}")
-# async def read_item(item_id: int, q: str = None):
-#     return {"item_id": item_id, "q": q}
