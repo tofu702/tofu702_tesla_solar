@@ -64,7 +64,7 @@ async def example_daily_data() -> list[server.lib.tesla_monthly_data_parser.Dail
     return daily_data
 
 @app.get("/day_data/range")
-async def day_data_for_range(start_date: str, end_date: str):
+async def day_data_for_range(start_date: str, end_date: str) -> DayDataForRangeResponse:
     format = "%Y-%m-%d"
     start_date_d = datetime.date.strptime(start_date, format)
     end_date_d = datetime.date.strptime(end_date, format)
