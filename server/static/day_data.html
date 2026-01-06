@@ -138,8 +138,7 @@
                 return { labels, dayLengths };
             } catch (error) {
                 console.error('Error fetching day length data:', error);
-                // Return sample data as fallback
-                return generateSampleData(year, month);
+                return {labels: [], dayLengths: []};
             }
         };
 
@@ -172,33 +171,12 @@
                 return { labels, solar_energy_kwh };
             } catch (error) {
                 console.error('Error fetching solar data:', error);
-                // Return sample data as fallback
-                return generateSampleData(year, month);
+                return {labels: [], solar_energy_kwh: []};
             }
-        };
-
-
-        // Generate sample data as fallback
-        const generateSampleData = (year, month) => {
-            const labels = [];
-            const data = [];
-            
-            // Get number of days in the selected month
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            
-            // Generate data for the specified number of days
-            for (let i = 1; i <= daysInMonth; i++) {
-                labels.push(i);
-                // Generate fake day length data (between 8-16 hours)
-                data.push(Math.floor(Math.random() * 8) + 8);
-            }
-            
-            return { labels, data };
         };
 
        function createDayLengthChart () {
-             // Get initial data
-            const initialData = generateSampleData(2024, 0); // Default to January 2024
+            const initialData = {labels: [], dayLengths: []};
 
             // Create the chart
             const ctx = document.getElementById('dayLengthChart').getContext('2d');
@@ -250,8 +228,7 @@
        }
 
        function createSolarDataChart () {
-             // Get initial data
-            const initialData = generateSampleData(2024, 0); // Default to January 2024
+            const initialData = {labels: [], data: []}
 
             // Create the chart
             const ctx = document.getElementById('solarDataChart').getContext('2d');
@@ -301,7 +278,6 @@
                 }
             });
        }
-
 
         // Function to update chart with new data
         const updateChartsWithData = async () => {
