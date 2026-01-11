@@ -30,7 +30,7 @@
         }
         .controls {
             margin: 20px 0;
-            text-align: center;
+            text-align: left;
         }
         .control-group {
             margin: 10px;
@@ -76,6 +76,11 @@
             margin: 10px 0;
             font-weight: normal;
         }
+        .secondary-year-controls {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -118,6 +123,25 @@
                         <option value="10">November</option>
                         <option value="11">December</option>
                     </select>
+                </div>
+                
+                <br>
+                
+                <div class="control-group">
+                    <label for="secondaryYearSelect">Comparison Year:</label>
+                    <select id="secondaryYearSelect">
+                        <option value="">None</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="enableSecondaryYear">
+                        Enable Comparison Year
+                    </label>
                 </div>
                 
                 <div class="control-group">
@@ -260,7 +284,8 @@ const fetchSolarStats = async (year, month) => {
                             fill: false,
                             tension: 0.1,
                             yAxisID: 'y1', // Use secondary y-axis
-                            hidden: false
+                            hidden: false,
+                            borderDash: [] // No dash for primary year
                         },
                         {
                             label: 'Solar Data (kWh)',
@@ -271,7 +296,8 @@ const fetchSolarStats = async (year, month) => {
                             fill: false,
                             tension: 0.1,
                             yAxisID: 'y2', // Use primary y-axis
-                            hidden: false
+                            hidden: false,
+                            borderDash: []
                         },
                         {
                             label: 'Home Usage (kWh)',
@@ -282,7 +308,8 @@ const fetchSolarStats = async (year, month) => {
                             fill: false,
                             tension: 0.1,
                             yAxisID: 'y2', // Use primary y-axis
-                            hidden: true
+                            hidden: true,
+                            borderDash: []
                         },
                         {
                             label: 'Grid Usage (kWh)',
@@ -293,7 +320,8 @@ const fetchSolarStats = async (year, month) => {
                             fill: false,
                             tension: 0.1,
                             yAxisID: 'y2', // Use primary y-axis
-                            hidden: true
+                            hidden: true,
+                            borderDash: []
                         },
                         {
                             label: 'Grid Exports (kWh)',
@@ -304,7 +332,8 @@ const fetchSolarStats = async (year, month) => {
                             fill: false,
                             tension: 0.1,
                             yAxisID: 'y2', // Use primary y-axis
-                            hidden: true
+                            hidden: true,
+                            borderDash: []
                         },
                         {
                             label: 'Powerwall Usage (kWh)',
@@ -315,7 +344,8 @@ const fetchSolarStats = async (year, month) => {
                             fill: false,
                             tension: 0.1,
                             yAxisID: 'y2', // Use primary y-axis
-                            hidden: true
+                            hidden: true,
+                            borderDash: []
                         }
                     ]
                 },
@@ -366,15 +396,18 @@ const fetchSolarStats = async (year, month) => {
         const updateUnifiedChartWithData = async () => {
             const yearSelect = document.getElementById('yearSelect');
             const monthSelect = document.getElementById('monthSelect');
+            const secondaryYearSelect = document.getElementById('secondaryYearSelect');
+            const enableSecondaryYear = document.getElementById('enableSecondaryYear');
             
             const year = parseInt(yearSelect.value);
             const month = parseInt(monthSelect.value);
+            const secondaryYear = enableSecondaryYear.checked ? parseInt(secondaryYearSelect.value) : null;
             
-            // Get data for both charts
+            // Get data for primary year
             const newDayLengthData = await fetchDayLengthData(year, month);
             const newSolarStats = await fetchSolarStats(year, month);
             
-            // Update chart data
+            // Update chart data for primary year
             unifiedChart.data.labels = newDayLengthData.labels;
             unifiedChart.data.datasets[0].data = newDayLengthData.dayLengths;
             unifiedChart.data.datasets[1].data = newSolarStats.solar_energy_kwh;
@@ -384,7 +417,11 @@ const fetchSolarStats = async (year, month) => {
             unifiedChart.data.datasets[5].data = newSolarStats.from_powerwall_kwh;
             
             // Update chart title
-            unifiedChart.options.plugins.title.text = `Day Length and Solar Production for ${monthSelect.options[monthSelect.selectedIndex].text} ${year}`;
+            if (secondaryYear) {
+                unifiedChart.options.plugins.title.text = `Day Length and Solar Production for ${monthSelect.options[monthSelect.selectedIndex].text} ${year} vs ${secondaryYear}`;
+            } else {
+                unifiedChart.options.plugins.title.text = `Day Length and Solar Production for ${monthSelect.options[monthSelect.selectedIndex].text} ${year}`;
+            }
             
             // Dynamically adjust Y-axis scales based on data
             if (newDayLengthData.dayLengths.length > 0) {
@@ -410,6 +447,116 @@ const fetchSolarStats = async (year, month) => {
                 unifiedChart.options.scales.y2.max = maxEnergy * 1.1; // Add 10% padding
             }
             
+            // Handle secondary year data if enabled
+            if (secondaryYear) {
+                // Fetch data for secondary year
+                const secondaryDayLengthData = await fetchDayLengthData(secondaryYear, month);
+                const secondarySolarStats = await fetchSolarStats(secondaryYear, month);
+                
+                // Remove existing secondary datasets first to avoid duplicates
+                while (unifiedChart.data.datasets.length > 6) {
+                    unifiedChart.data.datasets.pop();
+                }
+                
+                // Get current checkbox states for secondary data visibility
+                const showDayLength = document.getElementById('showDayLength').checked;
+                const showSolarData = document.getElementById('showSolarData').checked;
+                const showHomeUsage = document.getElementById('showHomeUsage').checked;
+                const showGridUsage = document.getElementById('showGridUsage').checked;
+                const showGridExports = document.getElementById('showGridExports').checked;
+                const showPowerwallUsage = document.getElementById('showPowerwallUsage').checked;
+                
+                // Add secondary year datasets with dashed lines but same colors
+                // Add secondary day length data (dashed line)
+                unifiedChart.data.datasets.push({
+                    label: `Day Length (${secondaryYear})`,
+                    data: secondaryDayLengthData.dayLengths,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y1',
+                    borderDash: [5, 5], // Dashed line
+                    hidden: !showDayLength
+                });
+                
+                // Add secondary solar data (dashed line)
+                unifiedChart.data.datasets.push({
+                    label: `Solar Data (${secondaryYear})`,
+                    data: secondarySolarStats.solar_energy_kwh,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y2',
+                    borderDash: [5, 5], // Dashed line
+                    hidden: !showSolarData
+                });
+                
+                // Add secondary home usage data (dashed line)
+                unifiedChart.data.datasets.push({
+                    label: `Home Usage (${secondaryYear})`,
+                    data: secondarySolarStats.home_kwh,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y2',
+                    borderDash: [5, 5], // Dashed line
+                    hidden: !showHomeUsage
+                });
+                
+                // Add secondary grid usage data (dashed line)
+                unifiedChart.data.datasets.push({
+                    label: `Grid Usage (${secondaryYear})`,
+                    data: secondarySolarStats.from_grid_kwh,
+                    borderColor: 'rgb(255, 205, 86)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y2',
+                    borderDash: [5, 5], // Dashed line
+                    hidden: !showGridUsage
+                });
+                
+                // Add secondary grid exports data (dashed line)
+                unifiedChart.data.datasets.push({
+                    label: `Grid Exports (${secondaryYear})`,
+                    data: secondarySolarStats.to_grid_kwh,
+                    borderColor: 'rgb(153, 102, 255)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y2',
+                    borderDash: [5, 5], // Dashed line
+                    hidden: !showGridExports
+                });
+                
+                // Add secondary powerwall usage data (dashed line)
+                unifiedChart.data.datasets.push({
+                    label: `Powerwall Usage (${secondaryYear})`,
+                    data: secondarySolarStats.from_powerwall_kwh,
+                    borderColor: 'rgb(255, 159, 64)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y2',
+                    borderDash: [5, 5], // Dashed line
+                    hidden: !showPowerwallUsage
+                });
+            } else {
+                // Remove secondary year datasets if they exist
+                while (unifiedChart.data.datasets.length > 6) {
+                    unifiedChart.data.datasets.pop();
+                }
+            }
+            
             unifiedChart.update();
         };
 
@@ -429,24 +576,100 @@ const fetchSolarStats = async (year, month) => {
             unifiedChart.data.datasets[4].hidden = !showGridExports;
             unifiedChart.data.datasets[5].hidden = !showPowerwallUsage;
             
+            // Handle secondary year datasets (if they exist)
+            const enableSecondaryYear = document.getElementById('enableSecondaryYear').checked;
+            if (enableSecondaryYear && unifiedChart.data.datasets.length > 6) {
+                // Secondary datasets start from index 6
+                unifiedChart.data.datasets[6].hidden = !showDayLength; // Secondary day length
+                unifiedChart.data.datasets[7].hidden = !showSolarData; // Secondary solar data
+                unifiedChart.data.datasets[8].hidden = !showHomeUsage; // Secondary home usage
+                unifiedChart.data.datasets[9].hidden = !showGridUsage; // Secondary grid usage
+                unifiedChart.data.datasets[10].hidden = !showGridExports; // Secondary grid exports
+                unifiedChart.data.datasets[11].hidden = !showPowerwallUsage; // Secondary powerwall usage
+            }
+            
+            unifiedChart.update();
+        }
+        
+        // Function to update all dataset visibility based on checkbox states
+        function updateDatasetVisibility() {
+            const showDayLength = document.getElementById('showDayLength').checked;
+            const showSolarData = document.getElementById('showSolarData').checked;
+            const showHomeUsage = document.getElementById('showHomeUsage').checked;
+            const showGridUsage = document.getElementById('showGridUsage').checked;
+            const showGridExports = document.getElementById('showGridExports').checked;
+            const showPowerwallUsage = document.getElementById('showPowerwallUsage').checked;
+            
+            // Update primary datasets
+            unifiedChart.data.datasets[0].hidden = !showDayLength;
+            unifiedChart.data.datasets[1].hidden = !showSolarData;
+            unifiedChart.data.datasets[2].hidden = !showHomeUsage;
+            unifiedChart.data.datasets[3].hidden = !showGridUsage;
+            unifiedChart.data.datasets[4].hidden = !showGridExports;
+            unifiedChart.data.datasets[5].hidden = !showPowerwallUsage;
+            
+            // Update secondary datasets if they exist
+            const enableSecondaryYear = document.getElementById('enableSecondaryYear').checked;
+            if (enableSecondaryYear && unifiedChart.data.datasets.length > 6) {
+                unifiedChart.data.datasets[6].hidden = !showDayLength; // Secondary day length
+                unifiedChart.data.datasets[7].hidden = !showSolarData; // Secondary solar data
+                unifiedChart.data.datasets[8].hidden = !showHomeUsage; // Secondary home usage
+                unifiedChart.data.datasets[9].hidden = !showGridUsage; // Secondary grid usage
+                unifiedChart.data.datasets[10].hidden = !showGridExports; // Secondary grid exports
+                unifiedChart.data.datasets[11].hidden = !showPowerwallUsage; // Secondary powerwall usage
+            }
+            
             unifiedChart.update();
         }
 
         // Add event listener to update button
         document.getElementById('updateChartBtn').addEventListener('click', updateUnifiedChartWithData);
         
+        // Add event listeners for secondary year controls
+        document.getElementById('enableSecondaryYear').addEventListener('change', function() {
+            updateUnifiedChartWithData();
+            setTimeout(updateDatasetVisibility, 100);
+        });
+        document.getElementById('secondaryYearSelect').addEventListener('change', function() {
+            updateUnifiedChartWithData();
+            setTimeout(updateDatasetVisibility, 100);
+        });
+        
         // Add event listeners to checkboxes
-        document.getElementById('showDayLength').addEventListener('change', toggleChartVisibility);
-        document.getElementById('showSolarData').addEventListener('change', toggleChartVisibility);
-        document.getElementById('showHomeUsage').addEventListener('change', toggleChartVisibility);
-        document.getElementById('showGridUsage').addEventListener('change', toggleChartVisibility);
-        document.getElementById('showGridExports').addEventListener('change', toggleChartVisibility);
-        document.getElementById('showPowerwallUsage').addEventListener('change', toggleChartVisibility);
+        document.getElementById('showDayLength').addEventListener('change', function() {
+            updateDatasetVisibility();
+            setTimeout(toggleChartVisibility, 100); // Ensure toggle happens after dataset visibility update
+        });
+        document.getElementById('showSolarData').addEventListener('change', function() {
+            updateDatasetVisibility();
+            setTimeout(toggleChartVisibility, 100);
+        });
+        document.getElementById('showHomeUsage').addEventListener('change', function() {
+            updateDatasetVisibility();
+            setTimeout(toggleChartVisibility, 100);
+        });
+        document.getElementById('showGridUsage').addEventListener('change', function() {
+            updateDatasetVisibility();
+            setTimeout(toggleChartVisibility, 100);
+        });
+        document.getElementById('showGridExports').addEventListener('change', function() {
+            updateDatasetVisibility();
+            setTimeout(toggleChartVisibility, 100);
+        });
+        document.getElementById('showPowerwallUsage').addEventListener('change', function() {
+            updateDatasetVisibility();
+            setTimeout(toggleChartVisibility, 100);
+        });
 
         createUnifiedChart();
         
         // Initial chart rendering
         updateUnifiedChartWithData();
+        
+        // Also trigger visibility toggle to ensure initial state matches checkboxes
+        setTimeout(() => {
+            toggleChartVisibility();
+        }, 500);
     </script>
 </body>
 </html>
