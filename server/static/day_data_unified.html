@@ -621,45 +621,49 @@ const fetchSolarStats = async (year, month) => {
             
             unifiedChart.update();
         }
+// Add event listeners for Year and Month selectors to auto-refresh
+document.getElementById('yearSelect').addEventListener('change', updateUnifiedChartWithData);
+document.getElementById('monthSelect').addEventListener('change', updateUnifiedChartWithData);
 
-        // Add event listener to update button
-        document.getElementById('updateChartBtn').addEventListener('click', updateUnifiedChartWithData);
-        
-        // Add event listeners for secondary year controls
-        document.getElementById('enableSecondaryYear').addEventListener('change', function() {
-            updateUnifiedChartWithData();
-            setTimeout(updateDatasetVisibility, 100);
-        });
-        document.getElementById('secondaryYearSelect').addEventListener('change', function() {
-            updateUnifiedChartWithData();
-            setTimeout(updateDatasetVisibility, 100);
-        });
-        
-        // Add event listeners to checkboxes
-        document.getElementById('showDayLength').addEventListener('change', function() {
-            updateDatasetVisibility();
-            setTimeout(toggleChartVisibility, 100); // Ensure toggle happens after dataset visibility update
-        });
-        document.getElementById('showSolarData').addEventListener('change', function() {
-            updateDatasetVisibility();
-            setTimeout(toggleChartVisibility, 100);
-        });
-        document.getElementById('showHomeUsage').addEventListener('change', function() {
-            updateDatasetVisibility();
-            setTimeout(toggleChartVisibility, 100);
-        });
-        document.getElementById('showGridUsage').addEventListener('change', function() {
-            updateDatasetVisibility();
-            setTimeout(toggleChartVisibility, 100);
-        });
-        document.getElementById('showGridExports').addEventListener('change', function() {
-            updateDatasetVisibility();
-            setTimeout(toggleChartVisibility, 100);
-        });
-        document.getElementById('showPowerwallUsage').addEventListener('change', function() {
-            updateDatasetVisibility();
-            setTimeout(toggleChartVisibility, 100);
-        });
+// Add event listener to update button (still kept for manual override)
+document.getElementById('updateChartBtn').addEventListener('click', updateUnifiedChartWithData);
+
+// Add event listeners for secondary year controls
+document.getElementById('enableSecondaryYear').addEventListener('change', function() {
+    updateUnifiedChartWithData();
+    setTimeout(updateDatasetVisibility, 100);
+});
+document.getElementById('secondaryYearSelect').addEventListener('change', function() {
+    updateUnifiedChartWithData();
+    setTimeout(updateDatasetVisibility, 100);
+});
+
+// Add event listeners to checkboxes
+document.getElementById('showDayLength').addEventListener('change', function() {
+    updateDatasetVisibility();
+    setTimeout(toggleChartVisibility, 100); // Ensure toggle happens after dataset visibility update
+});
+document.getElementById('showSolarData').addEventListener('change', function() {
+    updateDatasetVisibility();
+    setTimeout(toggleChartVisibility, 100);
+});
+document.getElementById('showHomeUsage').addEventListener('change', function() {
+    updateDatasetVisibility();
+    setTimeout(toggleChartVisibility, 100);
+});
+document.getElementById('showGridUsage').addEventListener('change', function() {
+    updateDatasetVisibility();
+    setTimeout(toggleChartVisibility, 100);
+});
+document.getElementById('showGridExports').addEventListener('change', function() {
+    updateDatasetVisibility();
+    setTimeout(toggleChartVisibility, 100);
+});
+document.getElementById('showPowerwallUsage').addEventListener('change', function() {
+    updateDatasetVisibility();
+    setTimeout(toggleChartVisibility, 100);
+});
+
 
         createUnifiedChart();
         
