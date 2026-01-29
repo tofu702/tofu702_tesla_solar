@@ -41,7 +41,7 @@ async def sun_data_for_range(start_date: str, end_date: str) -> SunStatsForRange
     days_to_stats = {}
     start_date_d = datetime.date.strptime(start_date, format)
     end_date_d = datetime.date.strptime(end_date, format)
-    num_days = (end_date_d - start_date_d).days
+    num_days = (end_date_d - start_date_d).days + 1
     if num_days < 0:
         raise ValueError("end_date: %s < start_date: %s" % (end_date, start_date))
     for cur_day_num in range(num_days):
