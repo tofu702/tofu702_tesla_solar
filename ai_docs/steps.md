@@ -13,3 +13,17 @@ Consult `openapi.json` we should make several more lines available
 
 # Step 3: Year over year comparison
 Allow the user to optionally select a secondary year to compare the current data to. The lines for the secondary year should be dashed, but the line colors should be the same for each metric. Place the UI for selecting the secondary year beneath the current year selector and have a control to turn the secondary year on or off.
+
+# Step 4: Aggregation Lines Moving Averages and Moving Maxes
+We will add an additional optional aggregation line--currently either a "Moving Average" and "Moving Max" modes. These modes add additional lines to the graphs for the currently selected metrics for the primary year and if selected the secondary year.
+
+There should be 5 options:
+* None
+* 7 Day Moving Average
+* 15 Day Moving Average
+* 7 Day Moving Max
+
+Notes:
+* Do not apply these to Day Length (no aggregation lines for day length should be drawn)
+* We will need to fetch additional data beyond the current month to compute these aggregations.
+  * If all data isn't available to fully compute an aggregation for a particular day, do not draw a data point for that day (for example: if only 6 days can be averaged on a day, there should be no data point for the 7 day moving average)
