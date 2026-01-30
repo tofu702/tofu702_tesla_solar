@@ -201,33 +201,33 @@
             dayLengths: {
                 name: "Day Length",
                 unitText: "hours",
-                borderColor: '75, 192, 192',
+                borderColorRGB: [75, 192, 192],
                 yAxisID: 'y1'
             },
             solar_energy_kwh: {
                 name: "Solar Energy",
                 unitText: "kWh",
-                borderColor: '255, 99, 132',
+                borderColorRGB: [255, 99, 132],
             },
             home_kwh: {
                 name: "Home Usage",
                 unitText: "kWh",
-                borderColor: '54, 162, 235',
+                borderColorRGB: [54, 162, 235],
             },
             from_grid_kwh: {
                 name: "Grid Usage",
                 unitText: "kWh",
-                borderColor: '255, 205, 86',
+                borderColorRGB: [255, 205, 86],
             },
             to_grid_kwh: {
                 name: "Grid Exports",
                 unitText: "kWh",
-                borderColor: '153, 102, 255',
+                borderColorRGB: [153, 205, 255],
             },
             from_powerwall_kwh: {
                 name: "Powerwall Usage",
                 unitText: "kWh",
-                borderColor: '255, 159, 64',
+                borderColorRGB: [255, 159, 64],
             }
         }
 
@@ -325,17 +325,21 @@
 
         function createPrimaryYearDataset(data, lineConfig) {
            const label = `${lineConfig.name} (${lineConfig.unitText})`;
-           return createDatasetGeneric(data, lineConfig, label, lineConfig.borderColor, []);
+           return createDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, []);
         }
 
         function createSecondaryYearDataset(data, lineConfig, year) {
             const label = `${lineConfig.name} - ${year}`;
-            return createDatasetGeneric(data, lineConfig, label, lineConfig.borderColor, [1, 1]);
+            const scalingFactor = .75;
+            color = [lineConfig.borderColorRGB[0]*scalingFactor,
+                     lineConfig.borderColorRGB[1]*scalingFactor,
+                     lineConfig.borderColorRGB[2]*scalingFactor];
+            return createDatasetGeneric(data, lineConfig, label, color, []);
         }
 
         function createPrimaryYearAggregationDataset(data, lineConfig, aggregationName, aggregationDays) {
             const label = `${lineConfig.name} - ${aggregationName} ${aggregationDays} Days`;
-            return createDatasetGeneric(data, lineConfig, label, lineConfig.borderColor, [5,5]);
+            return createDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, [5,5]);
         }
 
         function computeMaxkWh(datasets) {
