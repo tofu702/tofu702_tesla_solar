@@ -27,3 +27,12 @@ Notes:
 * Do not apply these to Day Length (no aggregation lines for day length should be drawn)
 * We will need to fetch additional data beyond the current month to compute these aggregations.
   * If all data isn't available to fully compute an aggregation for a particular day, do not draw a data point for that day (for example: if only 6 days can be averaged on a day, there should be no data point for the 7 day moving average)
+
+# Step 5: Monthly Summary Data API
+Modify `main.py` and `tesla_monthly_data_parser.py` to return monthly totals for all months for which we have data (IE: files exists in the data_file_dirpath).
+
+Notes:
+* Leverage the existing `_parse_csv_file` function; do write a second csv parser.
+* The pydantic object for the API should return structures similar to Daily Data but:
+   * Instead of `date` specify `first_day_of_month`
+   * Note that all the fields should be cummulative for the entire month. For example: `home_kwh` should be the total kwh for the home that month.
