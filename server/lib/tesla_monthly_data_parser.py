@@ -16,6 +16,15 @@ class DailyData(pydantic.BaseModel):
   to_grid_kwh: float = None
 
 
+class MonthlyData(pydantic.BaseModel):
+  first_day_of_month: datetime.date = None
+  home_kwh: float = None
+  from_powerwall_kwh: float = None
+  solar_energy_kwh: float = None
+  from_grid_kwh: float = None
+  to_grid_kwh: float = None
+
+
 class TeslaDataParser:
   def __init__(self, data_file_dirpath: str):
     self.data_file_dirpath = data_file_dirpath
@@ -68,6 +77,57 @@ class TeslaDataParser:
     data_for_relevant_days_only = [x for x in all_data_for_months_flattened \
                                    if (x.date >= start_date and x.date <= end_date)]
     return data_for_relevant_days_only
+
+  def monthly_data(self) -> list[MonthlyData]:
+    """Return monthly totals for all months that have data files"""
+    # Get all CSV files in the directory
+    month_files = [f for f in os.listdir(self.data_file_dirpath) if f.endswith('.csv')]
+    
+    # Sort files to ensure consistent processing
+    month_files.sort()
+    
+    monthly_data_list = []
+    
+    for file_name in month_files:
+      file_path = os.path.join(self.data_file_dirpath, file_name)
+      
+      # Parse the CSV file to get daily data
+      daily_data_list = self._parse_csv_file(file_path)
+      
+      # Extract the first day of the month from the filename (e.g., "2024_10.csv" -> 2024-10-01)
+      year_month_str = file_name.replace('.csv', '')
+      year, month = map(int, year_month_str.split('_'))
+      first_day_of_month = datetime.date(year, month, 1)
+      
+      # Aggregate daily data into monthly totals
+      monthly_totals = {
+        'home_kwh': 0.0,
+        'from_powerwall_kwh': 0.0,
+        'solar_energy_kwh': 0.0,
+        'from_grid_kwh': 0.0,
+        'to_grid_kwh': 0.0
+      }
+      
+      for daily_data in daily_data_list:
+        monthly_totals['home_kwh'] += daily_data.home_kwh
+        monthly_totals['from_powerwall_kwh'] += daily_data.from_powerwall_kwh
+        monthly_totals['solar_energy_kwh'] += daily_data.solar_energy_kwh
+        monthly_totals['from_grid_kwh'] += daily_data.from_grid_kwh
+        monthly_totals['to_grid_kwh'] += daily_data.to_grid_kwh
+      
+      # Create MonthlyData object with the aggregated values
+      monthly_data = MonthlyData(
+        first_day_of_month=first_day_of_month,
+        home_kwh=monthly_totals['home_kwh'],
+        from_powerwall_kwh=monthly_totals['from_powerwall_kwh'],
+        solar_energy_kwh=monthly_totals['solar_energy_kwh'],
+        from_grid_kwh=monthly_totals['from_grid_kwh'],
+        to_grid_kwh=monthly_totals['to_grid_kwh']
+      )
+      
+      monthly_data_list.append(monthly_data)
+    
+    return monthly_data_list
 
 def main():
   dir_path = "/Volumes/github/tofu702_tesla_solar/example_data/"

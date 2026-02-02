@@ -75,3 +75,10 @@ async def day_data_for_range(start_date: str, end_date: str) -> DayDataForRangeR
     all_day_data = parser.data_for_date_range(start_date_d, end_date_d)
     days_to_data = dict([(x.date.strftime(format), x) for x in all_day_data])
     return DayDataForRangeResponse(days_to_data=days_to_data)
+
+
+@app.get("/monthly_data")
+async def monthly_data() -> list[server.lib.tesla_monthly_data_parser.MonthlyData]:
+    """Return monthly totals for all months that have data"""
+    parser = server.lib.tesla_monthly_data_parser.TeslaDataParser(TESLA_DATA_DIR_PATH)
+    return parser.monthly_data()
