@@ -36,3 +36,16 @@ Notes:
 * The pydantic object for the API should return structures similar to Daily Data but:
    * Instead of `date` specify `first_day_of_month`
    * Note that all the fields should be cummulative for the entire month. For example: `home_kwh` should be the total kwh for the home that month.
+
+# Step 6: Front End For Monthly Data
+Create a new `static/monthly_comparison.html` that shows monthly data for each month as a bar graph. 
+
+Notes
+* Read `openapi.json` for the `/monthly_data` API spec.
+* Metric selection should be based on the `day_data_unified.html`, but radio buttons should be used so that only one metric may be selected at a time.
+  * Day Length should not be displayed so there is no need to call the sun_data APIs. 
+* The Bar Chart should work as follows
+  * The x axis labels should be the "Month of Year"
+  * The y axis is (obviously) in kwh
+  * For a particular month there should be separate bars for each year. For instance, there might be adjacent bars for January 2024, January 2025 and January 2026.
+  * All bars for the same year should be the same color.
