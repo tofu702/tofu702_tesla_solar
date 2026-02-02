@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Solar Data Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .control-group {
+            margin: 10px;
+            display: inline-block;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-top: 20px;
+        }
+        .metric-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .radio-group {
+            display: inline-block;
+            margin-right: 20px;
+        }
+        .radio-group label {
+            font-weight: normal;
+            display: inline;
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Monthly Solar Data Comparison</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="yearSelect">Select Year:</label>
+                <select id="yearSelect">
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="secondaryYearSelect">Comparison Year:</label>
+                <select id="secondaryYearSelect">
+                    <option value="">None</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="enableSecondaryYear">
+                    Enable Comparison Year
+                </label>
+            </div>
+            
+            <br>
+            
+            <div class="control-group">
+                <button id="updateChartBtn">Update Chart</button>
+            </div>
+        </div>
+
+        <div class="metric-controls">
+            <h3>Select Metric to Display:</h3>
+            <div class="radio-group">
+                <input type="radio" id="solar_energy_kwh" name="metric" value="solar_energy_kwh" checked>
+                <label for="solar_energy_kwh">Solar Energy (kWh)</label>
+            </div>
+            <div class="radio-group">
+                <input type="radio" id="home_kwh" name="metric" value="home_kwh">
+                <label for="home_kwh">Home Usage (kWh)</label>
+            </div>
+            <div class="radio-group">
+                <input type="radio" id="from_grid_kwh" name="metric" value="from_grid_kwh">
+                <label for="from_grid_kwh">Grid Usage (kWh)</label>
+            </div>
+            <div class="radio-group">
+                <input type="radio" id="to_grid_kwh" name="metric" value="to_grid_kwh">
+                <label for="to_grid_kwh">Grid Exports (kWh)</label>
+            </div>
+            <div class="radio-group">
+                <input type="radio" id="from_powerwall_kwh" name="metric" value="from_powerwall_kwh">
+                <label for="from_powerwall_kwh">Powerwall Usage (kWh)</label>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let monthlyChart = null;
+        
+        // Available metrics for selection
+        const metrics = {
+            'solar_energy_kwh': { name: "Solar Energy", unitText: "kWh" },
+            'home_kwh': { name: "Home Usage", unitText: "kWh" },
+            'from_grid_kwh': { name: "Grid Usage", unitText: "kWh" },
+            'to_grid_kwh': { name: "Grid Exports", unitText: "kWh" },
+            'from_powerwall_kwh': { name: "Powerwall Usage", unitText: "kWh" }
+        };
+        
+        // Color mapping for years
+        const yearColors = {
+            '2024': 'rgba(255, 99, 132, 0.7)',   // Red
+            '2025': 'rgba(54, 162, 235, 0.7)',   // Blue
+            '2026': 'rgba(255, 205, 86, 0.7)'    // Yellow
+        };
+        
+        // Function to fetch monthly data from the API
+        const fetchMonthlyData = async () => {
+            try {
+                const response = await fetch('/monthly_data');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching monthly data:', error);
+                return [];
+            }
+        };
+        
+        // Helper function to parse date string and extract year and month
+        function parseDateStr(dateStr) {
+            // Parse date string in format "YYYY-MM-DD"
+            const parts = dateStr.split('-');
+            const year = parts[0];
+            const month = parts[1]; // 01-12
+            return { year, month };
+        }
+        
+        // Function to group monthly data by year
+        function groupMonthlyDataByYear(monthlyData) {
+            const groupedData = {};
+            
+            for (const item of monthlyData) {
+                const parsedDate = parseDateStr(item.first_day_of_month);
+                const year = parsedDate.year;
+                
+                if (!groupedData[year]) {
+                    groupedData[year] = [];
+                }
+                
+                groupedData[year].push(item);
+            }
+            
+            return groupedData;
+        }
+        
+        // Function to create a bar chart for monthly data
+        function createMonthlyChart() {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [], // Will be populated dynamically
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Monthly Data Comparison'
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month of Year'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Energy (kWh)'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to update chart with new data
+        const updateMonthlyChart = async () => {
+            const yearSelect = document.getElementById('yearSelect');
+            const secondaryYearSelect = document.getElementById('secondaryYearSelect');
+            const enableSecondaryYear = document.getElementById('enableSecondaryYear');
+            const metricRadios = document.getElementsByName('metric');
+            
+            const primaryYear = parseInt(yearSelect.value);
+            const secondaryYear = enableSecondaryYear.checked ? parseInt(secondaryYearSelect.value) : null;
+            
+            // Get selected metric
+            let selectedMetric = 'solar_energy_kwh';
+            for (const radio of metricRadios) {
+                if (radio.checked) {
+                    selectedMetric = radio.value;
+                    break;
+                }
+            }
+            
+            // Fetch monthly data
+            const monthlyData = await fetchMonthlyData();
+            
+            // Group data by year
+            const groupedData = groupMonthlyDataByYear(monthlyData);
+            
+            // Prepare chart data
+            const allYears = [];
+            if (groupedData[primaryYear.toString()]) {
+                allYears.push(primaryYear.toString());
+            }
+            if (secondaryYear && groupedData[secondaryYear.toString()]) {
+                allYears.push(secondaryYear.toString());
+            }
+            
+            // Create labels for months
+            const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            // Prepare datasets
+            const datasets = [];
+            
+            // Process each year to create a dataset
+            for (const year of allYears) {
+                const yearData = groupedData[year];
+                
+                // Create data array for this year
+                const dataValues = Array(12).fill(null); // Initialize with nulls
+                
+                // Fill in the actual values
+                for (const item of yearData) {
+                    const parsedDate = parseDateStr(item.first_day_of_month);
+                    const monthIndex = parseInt(parsedDate.month) - 1; // Convert to 0-11
+                    dataValues[monthIndex] = item[selectedMetric];
+                }
+                
+                datasets.push({
+                    label: `${year}`,
+                    data: dataValues,
+                    backgroundColor: yearColors[year],
+                    borderColor: yearColors[year].replace('0.7', '1'),
+                    borderWidth: 1
+                });
+            }
+            
+            // Update chart with new data
+            monthlyChart.data.labels = monthLabels;
+            monthlyChart.data.datasets = datasets;
+            
+            // Update chart title based on selected metric
+            const metricName = metrics[selectedMetric].name;
+            monthlyChart.options.plugins.title.text = `Monthly ${metricName} Comparison`;
+            
+            monthlyChart.update();
+        };
+        
+        // Add event listeners for controls
+        document.getElementById('yearSelect').addEventListener('change', updateMonthlyChart);
+        document.getElementById('secondaryYearSelect').addEventListener('change', updateMonthlyChart);
+        document.getElementById('enableSecondaryYear').addEventListener('change', function() {
+            updateMonthlyChart();
+        });
+        
+        document.getElementById('updateChartBtn').addEventListener('click', updateMonthlyChart);
+        
+        // Add event listeners for metric selection
+        const metricRadios = document.getElementsByName('metric');
+        for (const radio of metricRadios) {
+            radio.addEventListener('change', updateMonthlyChart);
+        }
+        
+        // Initialize chart and data
+        createMonthlyChart();
+        updateMonthlyChart();
+    </script>
+</body>
+</html>
