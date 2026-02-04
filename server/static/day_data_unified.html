@@ -197,6 +197,7 @@
     </div>
 
     <script>
+        const disableStableColors = true;
         const lineConfigs = {
             dayLengths: {
                 name: "Day Length",
@@ -310,11 +311,13 @@
 
         function createDatasetGeneric(data, lineConfig, label, borderColor, borderDash) {
             const yAxisID = lineConfig.yAxisID ?? "y2";
+            borderColorText = disableStableColors ? null : `rgb(${borderColor})`;
+            backgroundColorText = disableStableColors ? null : `rgba(${borderColor}, 0.2)`;
             return {
                 label: label,
                 data: data,
-                borderColor: `rgb(${borderColor})`,
-                backgroundColor: `rgba(${borderColor}, 0.2)`,
+                borderColor: borderColorText,
+                backgroundColor: backgroundColorText,
                 borderWidth: 2,
                 fill: false,
                 tension: 0.1,
