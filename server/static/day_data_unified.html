@@ -200,32 +200,38 @@
         const disableStableColors = true;
         const lineConfigs = {
             dayLengths: {
+                checkboxName: "showDayLength",
                 name: "Day Length",
                 unitText: "hours",
                 borderColorRGB: [75, 192, 192],
                 yAxisID: 'y1'
             },
             solar_energy_kwh: {
+                checkboxName: "showSolarData",
                 name: "Solar Energy",
                 unitText: "kWh",
                 borderColorRGB: [255, 99, 132],
             },
             home_kwh: {
+                checkboxName: "showHomeUsage",
                 name: "Home Usage",
                 unitText: "kWh",
                 borderColorRGB: [54, 162, 235],
             },
             from_grid_kwh: {
+                checkboxName: "showGridUsage",
                 name: "Grid Usage",
                 unitText: "kWh",
                 borderColorRGB: [255, 205, 86],
             },
             to_grid_kwh: {
+                checkboxName: "showGridExports",
                 name: "Grid Exports",
                 unitText: "kWh",
                 borderColorRGB: [153, 205, 255],
             },
             from_powerwall_kwh: {
+                checkboxName: "showPowerwallUsage",
                 name: "Powerwall Usage",
                 unitText: "kWh",
                 borderColorRGB: [255, 159, 64],
@@ -326,23 +332,34 @@
             }
         }
 
-        function createPrimaryYearDataset(data, lineConfig) {
-           const label = `${lineConfig.name} (${lineConfig.unitText})`;
-           return createDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, []);
+        function maybeAddDatasetGeneric(data, lineConfig, label, borderColor, borderDash) {
+            const isChecked = document.getElementById(lineConfig.checkboxName).checked;
+
+            if (!isChecked) {
+                return;
+            }
+
+            const dataset = createDatasetGeneric(data, lineConfig, label, borderColor, borderDash);
+            unifiedChart.data.datasets.push(dataset);
         }
 
-        function createSecondaryYearDataset(data, lineConfig, year) {
+        function maybeAddPrimaryYearDataset(data, lineConfig) {
+            const label = `${lineConfig.name} (${lineConfig.unitText})`;
+            maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, []);
+        }
+
+        function maybeAddSecondaryYearDataset(data, lineConfig, year) {
             const label = `${lineConfig.name} - ${year}`;
             const scalingFactor = .75;
-            color = [lineConfig.borderColorRGB[0]*scalingFactor,
+            borderColor = [lineConfig.borderColorRGB[0]*scalingFactor,
                      lineConfig.borderColorRGB[1]*scalingFactor,
                      lineConfig.borderColorRGB[2]*scalingFactor];
-            return createDatasetGeneric(data, lineConfig, label, color, []);
+             maybeAddDatasetGeneric(data, lineConfig, label, borderColor, []);
         }
 
-        function createPrimaryYearAggregationDataset(data, lineConfig, aggregationName, aggregationDays) {
+        function maybeAddAggregationDataset(data, lineConfig, aggregationName, aggregationDays, yearß) {
             const label = `${lineConfig.name} - ${aggregationName} ${aggregationDays} Days`;
-            return createDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, [5,5]);
+            maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, [5,5]);
         }
 
         function computeMaxkWh(datasets) {
@@ -419,6 +436,81 @@
                 return calculateMovingAverage(allData, metric_name, month, windowSize);
             }
         }
+        
+        // Function to update chart with new data
+        const updateUnifiedChartWithData = async () => {
+            const yearSelect = document.getElementById('yearSelect');
+            const monthSelect = document.getElementById('monthSelect');
+            const secondaryYearSelect = document.getElementById('secondaryYearSelect');
+            const enableSecondaryYear = document.getElementById('enableSecondaryYear');
+            const aggregationSelect = document.getElementById('aggregationSelect');
+            
+            const year = parseInt(yearSelect.value);
+            const month = parseInt(monthSelect.value);
+            const secondaryYear = enableSecondaryYear.checked ? parseInt(secondaryYearSelect.value) : null;
+            const aggregationMode = aggregationSelect.value;
+            
+            // Get data for primary year
+            const newDayLengthData = await fetchDayLengthData(year, month);
+            const newSolarStats = await fetchSolarStats(year, month);
+
+            // Get Data for secondary year
+            const secondaryDayLengthData = secondaryYear ? await fetchDayLengthData(secondaryYear, month) : null;
+            const secondarySolarStats = secondaryYear ? await fetchSolarStats(secondaryYear, month) : null;
+
+            // Clear all datasets first to start fresh
+            unifiedChart.data.datasets = [];
+
+            // Handle Primary & Secondary Years
+            maybeAddPrimaryYearDataset(newDayLengthData.dayLengths, lineConfigs.dayLengths);
+
+            if (secondaryYear) {
+                maybeAddSecondaryYearDataset(secondaryDayLengthData.dayLengths, lineConfigs.dayLengths);
+            }
+
+            for (const [key, lineConfig] of Object.entries(lineConfigs)){
+                if (key == "dayLengths") {
+                    continue;
+                }
+                maybeAddPrimaryYearDataset(newSolarStats[key], lineConfig);
+
+                if (secondaryYear) {
+                    maybeAddSecondaryYearDataset(secondarySolarStats[key], lineConfig, secondaryYear);
+                }
+            }
+
+            unifiedChart.data.labels = newDayLengthData.labels;
+            
+            // Handle aggregation lines for primary year if selected
+            if (aggregationMode !== 'none' && newSolarStats && newSolarStats.solar_energy_kwh && newSolarStats.solar_energy_kwh.length > 0) {
+                await addAggregationDatasets(year, month, aggregationMode, newSolarStats);
+            }
+                        
+            // Update chart title
+            if (secondaryYear) {
+                unifiedChart.options.plugins.title.text = `Day Length and Solar Production for ${monthSelect.options[monthSelect.selectedIndex].text} ${year} vs ${secondaryYear}`;
+            } else {
+                unifiedChart.options.plugins.title.text = `Day Length and Solar Production for ${monthSelect.options[monthSelect.selectedIndex].text} ${year}`;
+            }
+            
+            // Dynamically adjust Y-axis scales based on data
+            if (newDayLengthData.dayLengths.length > 0) {
+                const minDayLength = Math.min(...newDayLengthData.dayLengths);
+                const maxDayLength = Math.max(...newDayLengthData.dayLengths);
+                
+                // Set Y-axis min and max with some padding
+                unifiedChart.options.scales.y1.min = Math.max(0, minDayLength - 0.5);
+                unifiedChart.options.scales.y1.max = Math.min(24, maxDayLength + 0.5);
+            }
+            
+            // For all energy data, set max dynamically
+            if (unifiedChart.data.datasets.length > 0) {
+                maxEnergy = computeMaxkWh(unifiedChart.data.datasets);
+                unifiedChart.options.scales.y2.max = maxEnergy * 1.1; // Add 10% padding
+            }
+            
+            unifiedChart.update();
+        };
 
         // Helper function to add aggregation datasets to chart
         const addAggregationDatasets = async (year, month, aggregationMode, primaryYearData) => {
@@ -451,210 +543,17 @@
             if (!allData || !allData.solar_energy_kwh || !allData.solar_energy_kwh.length) {
                 return;
             }
-            
-            // Calculate aggregations for each dataset
-            const solarAggregateData = computeAggregation(allData, "solar_energy_kwh", month, windowSize, isMovingMax);
-            const homeAggregateData = computeAggregation(allData, "home_kwh", month, windowSize, isMovingMax);
-            const gridUsageAggregateData = computeAggregation(allData, "from_grid_kwh", month, windowSize, isMovingMax);
-            const gridExportsAggregateData = computeAggregation(allData, "to_grid_kwh", month, windowSize, isMovingMax);
-            const powerwallAggregateData = computeAggregation(allData, "from_powerwall_kwh", month, windowSize, isMovingMax);
-
-            const showSolarData = document.getElementById('showSolarData').checked;
-            const showHomeUsage = document.getElementById('showHomeUsage').checked;
-            const showGridUsage = document.getElementById('showGridUsage').checked;
-            const showGridExports = document.getElementById('showGridExports').checked;
-            const showPowerwallUsage = document.getElementById('showPowerwallUsage').checked;
 
             const aggregationName = isMovingMax ? 'Moving Max' : 'Moving Average';
             
             // Add aggregation datasets for primary year
-            if (showSolarData) {
-                const lineConfig = lineConfigs.solar_energy_kwh;
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearAggregationDataset(solarAggregateData, lineConfig, aggregationName, windowSize)
-                );
-            }
-            
-            if (showHomeUsage) {
-                const lineConfig = lineConfigs.home_kwh;
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearAggregationDataset(homeAggregateData, lineConfig, aggregationName, windowSize)
-                );
-            }
-            
-            if (showGridUsage) {
-                const lineConfig = lineConfigs.from_grid_kwh;
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearAggregationDataset(gridUsageAggregateData, lineConfig, aggregationName, windowSize)
-                );
-            }
-            
-            if (showGridExports) {
-                const lineConfig = lineConfigs.to_grid_kwh;
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearAggregationDataset(gridExportsAggregateData, lineConfig, aggregationName, windowSize)
-                );
-            }
-            
-            if (showPowerwallUsage) {
-                const lineConfig = lineConfigs.from_powerwall_kwh;
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearAggregationDataset(powerwallAggregateData, lineConfig, aggregationName, windowSize)
-                );
-            }
-        };
-        
-        // Function to update chart with new data
-        const updateUnifiedChartWithData = async () => {
-            const yearSelect = document.getElementById('yearSelect');
-            const monthSelect = document.getElementById('monthSelect');
-            const secondaryYearSelect = document.getElementById('secondaryYearSelect');
-            const enableSecondaryYear = document.getElementById('enableSecondaryYear');
-            const aggregationSelect = document.getElementById('aggregationSelect');
-            
-            const year = parseInt(yearSelect.value);
-            const month = parseInt(monthSelect.value);
-            const secondaryYear = enableSecondaryYear.checked ? parseInt(secondaryYearSelect.value) : null;
-            const aggregationMode = aggregationSelect.value;
-            
-            // Get data for primary year
-            const newDayLengthData = await fetchDayLengthData(year, month);
-            const newSolarStats = await fetchSolarStats(year, month);
-            
-            const showDayLength = document.getElementById('showDayLength').checked;
-            const showSolarData = document.getElementById('showSolarData').checked;
-            const showHomeUsage = document.getElementById('showHomeUsage').checked;
-            const showGridUsage = document.getElementById('showGridUsage').checked;
-            const showGridExports = document.getElementById('showGridExports').checked;
-            const showPowerwallUsage = document.getElementById('showPowerwallUsage').checked;
-
-            // Clear all datasets first to start fresh
-            unifiedChart.data.datasets = [];
- 
-            // Add primary year datasets (always present)
-            if (showDayLength) {
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearDataset(newDayLengthData.dayLengths, lineConfigs.dayLengths)
-                );
-            }
-            
-            if (showSolarData) {
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearDataset(newSolarStats.solar_energy_kwh, lineConfigs.solar_energy_kwh)
-                );
-            }
-            
-            if (showHomeUsage) {
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearDataset(newSolarStats.home_kwh, lineConfigs.home_kwh)
-                );
-            }
-            
-            if (showGridUsage) {
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearDataset(newSolarStats.from_grid_kwh, lineConfigs.from_grid_kwh)
-                );
-            }
-            
-            if (showGridExports) {
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearDataset(newSolarStats.to_grid_kwh, lineConfigs.to_grid_kwh)
-                );
-            }
-            
-            if (showPowerwallUsage) {
-                unifiedChart.data.datasets.push(
-                    createPrimaryYearDataset(newSolarStats.from_powerwall_kwh, lineConfigs.from_powerwall_kwh)
-                );
-            }
-
-            unifiedChart.data.labels = newDayLengthData.labels;
-            
-            // Handle aggregation lines for primary year if selected
-            if (aggregationMode !== 'none' && newSolarStats && newSolarStats.solar_energy_kwh && newSolarStats.solar_energy_kwh.length > 0) {
-                await addAggregationDatasets(year, month, aggregationMode, newSolarStats);
-            }
-            
-            // Handle secondary year data if enabled
-            if (secondaryYear) {
-                // Fetch data for secondary year
-                const secondaryDayLengthData = await fetchDayLengthData(secondaryYear, month);
-                const secondarySolarStats = await fetchSolarStats(secondaryYear, month);
-                
-                // Add secondary year datasets with dashed lines but same colors
-                // Add secondary day length data (dashed line)
-                if (showDayLength) {
-                    lineConfig = lineConfigs["dayLengths"];
-                    unifiedChart.data.datasets.push(
-                        createSecondaryYearDataset(secondaryDayLengthData.dayLengths, lineConfig, secondaryYear)
-                    );
+            for (const [key, lineConfig] of Object.entries(lineConfigs)) {
+                if (key == "dayLengths") {
+                    continue;
                 }
-                
-                // Add secondary solar data (dashed line)
-                if (showSolarData) {
-                    lineConfig = lineConfigs["solar_energy_kwh"];
-                    unifiedChart.data.datasets.push(
-                        createSecondaryYearDataset(secondarySolarStats.solar_energy_kwh, lineConfig, secondaryYear)
-                    );
-                }
-                
-                // Add secondary home usage data (dashed line)
-                if (showHomeUsage) {
-                    lineConfig = lineConfigs["home_kwh"];
-                    unifiedChart.data.datasets.push(
-                        createSecondaryYearDataset(secondarySolarStats.home_kwh, lineConfig, secondaryYear)
-                    );
-                }
-                
-                // Add secondary grid usage data (dashed line)
-                if (showGridUsage) {
-                    lineConfig = lineConfigs["from_grid_kwh"];
-                    unifiedChart.data.datasets.push(
-                        createSecondaryYearDataset(secondarySolarStats.from_grid_kwh, lineConfig, secondaryYear)
-                    );
-                }
-                
-                // Add secondary grid exports data (dashed line)
-                if (showGridExports) {
-                    lineConfig = lineConfigs["to_grid_kwh"];
-                    unifiedChart.data.datasets.push(
-                        createSecondaryYearDataset(secondarySolarStats.to_grid_kwh, lineConfig, secondaryYear)
-                    );
-                }
-                
-                // Add secondary powerwall usage data (dashed line)
-                if (showPowerwallUsage) {
-                    lineConfig = lineConfigs["from_powerwall_kwh"];
-                    unifiedChart.data.datasets.push(
-                        createSecondaryYearDataset(secondarySolarStats.from_powerwall_kwh, lineConfig, secondaryYear)
-                    );
-                }
+                aggregateData = computeAggregation(allData, key, month, windowSize, isMovingMax);
+                maybeAddAggregationDataset(aggregateData, lineConfig, aggregationName, windowSize, year);
             }
-            
-            // Update chart title
-            if (secondaryYear) {
-                unifiedChart.options.plugins.title.text = `Day Length and Solar Production for ${monthSelect.options[monthSelect.selectedIndex].text} ${year} vs ${secondaryYear}`;
-            } else {
-                unifiedChart.options.plugins.title.text = `Day Length and Solar Production for ${monthSelect.options[monthSelect.selectedIndex].text} ${year}`;
-            }
-            
-            // Dynamically adjust Y-axis scales based on data
-            if (newDayLengthData.dayLengths.length > 0) {
-                const minDayLength = Math.min(...newDayLengthData.dayLengths);
-                const maxDayLength = Math.max(...newDayLengthData.dayLengths);
-                
-                // Set Y-axis min and max with some padding
-                unifiedChart.options.scales.y1.min = Math.max(0, minDayLength - 0.5);
-                unifiedChart.options.scales.y1.max = Math.min(24, maxDayLength + 0.5);
-            }
-            
-            // For all energy data, set max dynamically
-            if (unifiedChart.data.datasets.length > 0) {
-                maxEnergy = computeMaxkWh(unifiedChart.data.datasets);
-                unifiedChart.options.scales.y2.max = maxEnergy * 1.1; // Add 10% padding
-            }
-            
-            unifiedChart.update();
         };
 
         // Helper function to calculate moving average
