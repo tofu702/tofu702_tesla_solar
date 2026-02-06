@@ -343,22 +343,13 @@
             unifiedChart.data.datasets.push(dataset);
         }
 
-        function maybeAddPrimaryYearDataset(data, lineConfig) {
-            const label = `${lineConfig.name} (${lineConfig.unitText})`;
-            maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, []);
+        function maybeAddRawDataset(data, lineConfig, year) {
+            const label = `${lineConfig.name}  (${lineConfig.unitText}) - ${year}`;
+             maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, []);
         }
 
-        function maybeAddSecondaryYearDataset(data, lineConfig, year) {
-            const label = `${lineConfig.name} - ${year}`;
-            const scalingFactor = .75;
-            borderColor = [lineConfig.borderColorRGB[0]*scalingFactor,
-                     lineConfig.borderColorRGB[1]*scalingFactor,
-                     lineConfig.borderColorRGB[2]*scalingFactor];
-             maybeAddDatasetGeneric(data, lineConfig, label, borderColor, []);
-        }
-
-        function maybeAddAggregationDataset(data, lineConfig, aggregationName, aggregationDays, yearß) {
-            const label = `${lineConfig.name} - ${aggregationName} ${aggregationDays} Days`;
+        function maybeAddAggregationDataset(data, lineConfig, aggregationName, aggregationDays, year) {
+            const label = `${lineConfig.name} - ${year} - ${aggregationName} ${aggregationDays} Days`;
             maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, [5,5]);
         }
 
@@ -451,43 +442,19 @@
             const aggregationMode = aggregationSelect.value;
             
             // Get data for primary year
-            const newDayLengthData = await fetchDayLengthData(year, month);
-            const newSolarStats = await fetchSolarStats(year, month);
-
-            // Get Data for secondary year
-            const secondaryDayLengthData = secondaryYear ? await fetchDayLengthData(secondaryYear, month) : null;
-            const secondarySolarStats = secondaryYear ? await fetchSolarStats(secondaryYear, month) : null;
+            const primaryYearDayLengthData = await fetchDayLengthData(year, month);
 
             // Clear all datasets first to start fresh
             unifiedChart.data.datasets = [];
 
-            // Handle Primary & Secondary Years
-            maybeAddPrimaryYearDataset(newDayLengthData.dayLengths, lineConfigs.dayLengths);
+            // TODO: Figure out how to get rid of this
+            unifiedChart.data.labels = primaryYearDayLengthData.labels;
+
+            // Add all data sets
+            await addAllDatasetsForYear(year, month, aggregationMode);
 
             if (secondaryYear) {
-                maybeAddSecondaryYearDataset(secondaryDayLengthData.dayLengths, lineConfigs.dayLengths);
-            }
-
-            for (const [key, lineConfig] of Object.entries(lineConfigs)){
-                if (key == "dayLengths") {
-                    continue;
-                }
-                maybeAddPrimaryYearDataset(newSolarStats[key], lineConfig);
-
-                if (secondaryYear) {
-                    maybeAddSecondaryYearDataset(secondarySolarStats[key], lineConfig, secondaryYear);
-                }
-            }
-
-            unifiedChart.data.labels = newDayLengthData.labels;
-            
-            // Handle aggregation lines for primary year if selected
-            if (aggregationMode !== 'none' && newSolarStats && newSolarStats.solar_energy_kwh && newSolarStats.solar_energy_kwh.length > 0) {
-                await addAggregationDatasets(year, month, aggregationMode);
-
-                if (secondaryYear) {
-                    await addAggregationDatasets(secondaryYear, month, aggregationMode);
-                }
+                await addAllDatasetsForYear(secondaryYear, month, aggregationMode);
             }
                         
             // Update chart title
@@ -498,9 +465,9 @@
             }
             
             // Dynamically adjust Y-axis scales based on data
-            if (newDayLengthData.dayLengths.length > 0) {
-                const minDayLength = Math.min(...newDayLengthData.dayLengths);
-                const maxDayLength = Math.max(...newDayLengthData.dayLengths);
+            if (primaryYearDayLengthData.dayLengths.length > 0) {
+                const minDayLength = Math.min(...primaryYearDayLengthData.dayLengths);
+                const maxDayLength = Math.max(...primaryYearDayLengthData.dayLengths);
                 
                 // Set Y-axis min and max with some padding
                 unifiedChart.options.scales.y1.min = Math.max(0, minDayLength - 0.5);
@@ -515,6 +482,24 @@
             
             unifiedChart.update();
         };
+
+        // Includes Aggregations
+        const addAllDatasetsForYear = async (year, month, aggregationMode) => {
+            const dayLengthData = await fetchDayLengthData(year, month);
+            const solarStats = await fetchSolarStats(year, month);
+
+            maybeAddRawDataset(dayLengthData.dayLengths, lineConfigs.dayLengths);
+            for (const [key, lineConfig] of Object.entries(lineConfigs)) {
+                if (key == "dayLengths") {
+                    continue;
+                }
+                maybeAddRawDataset(solarStats[key], lineConfig, year);
+            }
+
+            if (aggregationMode !== 'none') {
+                await addAggregationDatasets(year, month, aggregationMode);
+            }
+        }
 
         // Helper function to add aggregation datasets to chart
         const addAggregationDatasets = async (year, month, aggregationMode) => {
