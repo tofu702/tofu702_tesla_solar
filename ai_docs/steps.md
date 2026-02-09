@@ -53,3 +53,7 @@ Notes
 
   # Step 7: Add [Only] Shortcut Buttons for the Daily Data
   In `static/day_data_unified.html` add buttons labeled "[Only]" for each of the metrics in the "Chart Visibility Controls". These buttons should uncheck all of the other boxes except for that metric which it should explicitly check. 
+
+
+  # Step 8: Change Monthly Data UI to Year Checkboxs
+  In `static/monthly_comparison.html` change the UI for year selection (in the `<div class="controls">`) to be check boxes for the relevant years (2024, 2025, 2026) and remove the other UI--`<select>` element and comparison mode should go away. Obviously we should now allow an arbitrary number of years to be compared.
