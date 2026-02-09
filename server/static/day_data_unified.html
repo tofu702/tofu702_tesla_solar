@@ -76,6 +76,15 @@
             margin: 10px 0;
             font-weight: normal;
         }
+        .only-link {
+            color: #007bff;
+            text-decoration: underline;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .only-link:hover {
+            color: #0056b3;
+        }
         .secondary-year-controls {
             margin-top: 20px;
             padding-top: 20px;
@@ -171,26 +180,32 @@
                 <label>
                     <input type="checkbox" id="showDayLength" checked>
                     Show Day Length
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showDayLength'); return false;">[Only]</a>
                 </label>
                 <label>
                     <input type="checkbox" id="showSolarData" checked>
                     Show Solar Data
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showSolarData'); return false;">[Only]</a>
                 </label>
                 <label>
                     <input type="checkbox" id="showHomeUsage" checked>
                     Show Home Usage
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showHomeUsage'); return false;">[Only]</a>
                 </label>
                 <label>
                     <input type="checkbox" id="showGridUsage" checked>
                     Show Grid Usage
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showGridUsage'); return false;">[Only]</a>
                 </label>
                 <label>
                     <input type="checkbox" id="showGridExports" checked>
                     Show Grid Exports
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showGridExports'); return false;">[Only]</a>
                 </label>
                 <label>
                     <input type="checkbox" id="showPowerwallUsage" checked>
                     Show Powerwall Usage
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showPowerwallUsage'); return false;">[Only]</a>
                 </label>
             </div>
         </div>
@@ -654,6 +669,23 @@
             }
         };
 
+// Function to handle "[Only]" button clicks
+function onlyButtonClicked(targetCheckboxId) {
+    // Uncheck all checkboxes
+    document.querySelectorAll('.checkbox-container input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    // Check only the target checkbox
+    const targetCheckbox = document.getElementById(targetCheckboxId);
+    if (targetCheckbox) {
+        targetCheckbox.checked = true;
+    }
+    
+    // Update the chart to reflect changes
+    updateUnifiedChartWithData();
+}
+
 // Add event listeners for Year and Month selectors to auto-refresh
 document.getElementById('yearSelect').addEventListener('change', updateUnifiedChartWithData);
 document.getElementById('monthSelect').addEventListener('change', updateUnifiedChartWithData);
@@ -697,6 +729,7 @@ document.getElementById('showPowerwallUsage').addEventListener('change', functio
         
         // Initial chart rendering
         updateUnifiedChartWithData();
+        
     </script>
 </body>
 </html>
