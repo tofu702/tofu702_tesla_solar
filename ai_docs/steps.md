@@ -49,3 +49,7 @@ Notes
   * The y axis is (obviously) in kwh
   * For a particular month there should be separate bars for each year. For instance, there might be adjacent bars for January 2024, January 2025 and January 2026.
   * All bars for the same year should be the same color.
+
+
+  # Step 7: Add [Only] Shortcut Buttons for the Daily Data
+  In `static/day_data_unified.html` add buttons labeled "[Only]" for each of the metrics in the "Chart Visibility Controls". These buttons should uncheck all of the other boxes except for that metric which it should explicitly check. 
