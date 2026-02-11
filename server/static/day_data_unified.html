@@ -107,55 +107,57 @@
             <p>This graph shows both day length and solar production data on a single chart.</p>
             
             <div class="controls">
-                <div class="control-group">
-                    <label for="yearSelect">Select Year:</label>
-                    <select id="yearSelect">
-                        <option value="2024">2024</option>
-                        <option value="2025" selected>2025</option>
-                        <option value="2026">2026</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label for="monthSelect">Select Month:</label>
-                    <select id="monthSelect">
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11" selected>November</option>
-                        <option value="12">December</option>
-                    </select>
-                </div>
-                
-                <br>
-                
-                <div class="control-group">
-                    <label for="secondaryYearSelect">Comparison Year:</label>
-                    <select id="secondaryYearSelect">
-                        <option value="">None</option>
-                        <option value="2024"selected >2024</option>
-                        <option value="2025">2025</option>
-                        <option value="2026">2026</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="enableSecondaryYear">
-                        Enable Comparison Year
-                    </label>
-                </div>
-                
-                <div class="control-group">
+                <div class = "control-group">
+                    <div class="control-group">
+                        <label for="yearSelect">Select Year:</label>
+                        <select id="yearSelect">
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="monthSelect">Select Month:</label>
+                        <select id="monthSelect">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11" selected>November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    
                     <br>
-                    <button id="updateChartBtn">Update Chart</button>
+                    
+                    <div class="control-group">
+                        <label for="secondaryYearSelect">Comparison Year:</label>
+                        <select id="secondaryYearSelect">
+                            <option value="">None</option>
+                            <option value="2024"selected >2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="enableSecondaryYear">
+                            Enable Comparison Year
+                        </label>
+                    </div>
+                    
+                    <div class="control-group">
+                        <br>
+                        <button id="updateChartBtn">Update Chart</button>
+                    </div>
                 </div>
                 
                 <div class="control-group">
@@ -166,6 +168,12 @@
                         <option value="15day_avg">15 Day Moving Average</option>
                         <option value="7day_max">7 Day Moving Max</option>
                     </select>
+                    <br/>
+                    <br/>
+                    <label>
+                        <input type="checkbox" id="aggregationOnlySelector">
+                        Only Show Aggregates
+                    </label>
                 </div>
             </div>
             
@@ -450,11 +458,13 @@
             const secondaryYearSelect = document.getElementById('secondaryYearSelect');
             const enableSecondaryYear = document.getElementById('enableSecondaryYear');
             const aggregationSelect = document.getElementById('aggregationSelect');
+            const aggregationOnlySelector = document.getElementById('aggregationOnlySelector');
             
             const year = parseInt(yearSelect.value);
             const month = parseInt(monthSelect.value);
             const secondaryYear = enableSecondaryYear.checked ? parseInt(secondaryYearSelect.value) : null;
             const aggregationMode = aggregationSelect.value;
+            const isAggregationOnly = aggregationOnlySelector.checked;
             
             // Get data for primary year
             const primaryYearDayLengthData = await fetchDayLengthData(year, month);
@@ -466,10 +476,10 @@
             unifiedChart.data.labels = primaryYearDayLengthData.labels;
 
             // Add all data sets
-            await addAllDatasetsForYear(year, month, aggregationMode);
+            await addAllDatasetsForYear(year, month, aggregationMode, isAggregationOnly);
 
             if (secondaryYear) {
-                await addAllDatasetsForYear(secondaryYear, month, aggregationMode);
+                await addAllDatasetsForYear(secondaryYear, month, aggregationMode, isAggregationOnly);
             }
                         
             // Update chart title
@@ -499,16 +509,18 @@
         };
 
         // Includes Aggregations
-        const addAllDatasetsForYear = async (year, month, aggregationMode) => {
+        const addAllDatasetsForYear = async (year, month, aggregationMode, isAggregationOnly) => {
             const dayLengthData = await fetchDayLengthData(year, month);
             const solarStats = await fetchSolarStats(year, month);
 
             maybeAddRawDataset(dayLengthData.dayLengths, lineConfigs.dayLengths);
-            for (const [key, lineConfig] of Object.entries(lineConfigs)) {
-                if (key == "dayLengths") {
-                    continue;
+            if (!isAggregationOnly || aggregationMode == 'none') {
+                for (const [key, lineConfig] of Object.entries(lineConfigs)) {
+                    if (key == "dayLengths") {
+                        continue;
+                    }
+                    maybeAddRawDataset(solarStats[key], lineConfig, year);
                 }
-                maybeAddRawDataset(solarStats[key], lineConfig, year);
             }
 
             if (aggregationMode !== 'none') {
@@ -695,6 +707,9 @@ document.getElementById('updateChartBtn').addEventListener('click', updateUnifie
 
 // Add event listener for aggregation mode selector
 document.getElementById('aggregationSelect').addEventListener('change', updateUnifiedChartWithData);
+
+// Add event listener for changes to "Only Show Aggregates
+document.getElementById("aggregationOnlySelector").addEventListener('change', updateUnifiedChartWithData);
 
 // Add event listeners for secondary year controls
 document.getElementById('enableSecondaryYear').addEventListener('change', function() {
