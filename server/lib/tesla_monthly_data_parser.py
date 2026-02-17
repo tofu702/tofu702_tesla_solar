@@ -23,6 +23,8 @@ class MonthlyData(pydantic.BaseModel):
   solar_energy_kwh: float = None
   from_grid_kwh: float = None
   to_grid_kwh: float = None
+  num_days_in_month: int = None
+  num_days_with_solar_energy_gt_2: int = None
 
 
 class TeslaDataParser:
@@ -105,7 +107,9 @@ class TeslaDataParser:
         'from_powerwall_kwh': 0.0,
         'solar_energy_kwh': 0.0,
         'from_grid_kwh': 0.0,
-        'to_grid_kwh': 0.0
+        'to_grid_kwh': 0.0,
+        'num_days': 0,
+        'num_days_with_more_than_2kwh_solar': 0,
       }
       
       for daily_data in daily_data_list:
@@ -114,7 +118,12 @@ class TeslaDataParser:
         monthly_totals['solar_energy_kwh'] += daily_data.solar_energy_kwh
         monthly_totals['from_grid_kwh'] += daily_data.from_grid_kwh
         monthly_totals['to_grid_kwh'] += daily_data.to_grid_kwh
-      
+        monthly_totals['num_days'] += 1
+
+        # Count days with solar energy > 2 kWh
+        if daily_data.to_grid_kwh > 2:
+          monthly_totals['num_days_with_more_than_2kwh_solar'] += 1
+
       # Create MonthlyData object with the aggregated values
       monthly_data = MonthlyData(
         first_day_of_month=first_day_of_month,
@@ -122,7 +131,9 @@ class TeslaDataParser:
         from_powerwall_kwh=monthly_totals['from_powerwall_kwh'],
         solar_energy_kwh=monthly_totals['solar_energy_kwh'],
         from_grid_kwh=monthly_totals['from_grid_kwh'],
-        to_grid_kwh=monthly_totals['to_grid_kwh']
+        to_grid_kwh=monthly_totals['to_grid_kwh'],
+        num_days_in_month=monthly_totals['num_days'],
+        num_days_with_solar_energy_gt_2=monthly_totals['num_days_with_more_than_2kwh_solar']
       )
       
       monthly_data_list.append(monthly_data)
