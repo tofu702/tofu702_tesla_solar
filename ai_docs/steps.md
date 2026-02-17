@@ -50,10 +50,32 @@ Notes
   * For a particular month there should be separate bars for each year. For instance, there might be adjacent bars for January 2024, January 2025 and January 2026.
   * All bars for the same year should be the same color.
 
+# Step 7: Add [Only] Shortcut Buttons for the Daily Data
+In `static/day_data_unified.html` add buttons labeled "[Only]" for each of the metrics in the "Chart Visibility Controls". These buttons should uncheck all of the other boxes except for that metric which it should explicitly check.
 
-  # Step 7: Add [Only] Shortcut Buttons for the Daily Data
-  In `static/day_data_unified.html` add buttons labeled "[Only]" for each of the metrics in the "Chart Visibility Controls". These buttons should uncheck all of the other boxes except for that metric which it should explicitly check. 
+# Step 8: Change Monthly Data UI to Year Checkboxs
+In `static/monthly_comparison.html` change the UI for year selection (in the `<div class="controls">`) to be check boxes for the relevant years (2024, 2025, 2026) and remove the other UI--`<select>` element and comparison mode should go away. Obviously we should now allow an arbitrary number of years to be compared.
 
+# Step 9: Create a new All Time Data Web Page
+Create new page for all time data in `static/all_time.html`.
 
-  # Step 8: Change Monthly Data UI to Year Checkboxs
-  In `static/monthly_comparison.html` change the UI for year selection (in the `<div class="controls">`) to be check boxes for the relevant years (2024, 2025, 2026) and remove the other UI--`<select>` element and comparison mode should go away. Obviously we should now allow an arbitrary number of years to be compared.
+## Total and Daily Average Table
+Shows the following in table format. Totals should be in the first column and daily averages should be in the second column.:
+* Total Days: Total Days of Data
+* Total Solar Energy and Daily Average Solar Energy
+* Total Home Usage and Daily Average Home Usage
+* Total Grid Usage and Daily Average Grid Usage
+* Total Grid Exports and Daily Average Grid Exports
+* Total Powerwall Usage and Daily Average Powerwall Usage
+* "Total Production - Exports": Should be "Total Solar Energy" - "Grid Exports" and the corresponding daily average
+
+## Other All Time Stats
+Show these in a separate table
+* "% Production": Compute as percentage "Total Solar Energy" / "Total Home Usage"
+* "% Production - Exports": Compute as Percentage "Total Production - Exports" / "Total Home Usage"
+* "# Days w/ > 2 kWh in Exports": These should be days without at least 2 kWh in exports 
+* "Total Powerwall Cycles": "Total Powerwall Usage" / 13.5. Round to the nearest integer
+
+## Notes:
+* Call `/monthly_data` and aggregate to produce this
+* Design this is such a way that it could be added to the existing `main.html` in the future, but keep it separate for now.
