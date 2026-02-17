@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Time Solar Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .table-container {
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>All Time Solar Data Summary</h1>
+        
+        <div id="loading" class="loading">
+            Loading data...
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            Error loading data. Please try again later.
+        </div>
+        
+        <div id="content" style="display: none;">
+            <div class="table-container">
+                <h2>Total and Daily Average Table</h2>
+                <table id="summaryTable">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Total (kWh)</th>
+                            <th>Daily Average (kWh)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="table-container">
+                <h2>Other All Time Stats</h2>
+                <table id="statsTable">
+                    <thead>
+                        <tr>
+                            <th>Statistic</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to fetch monthly data from the API
+        const fetchMonthlyData = async () => {
+            try {
+                const response = await fetch('/monthly_data');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching monthly data:', error);
+                throw error;
+            }
+        };
+        
+        // Function to calculate all-time statistics
+        const calculateAllTimeStats = (monthlyData) => {
+            // Initialize totals
+            const totals = {
+                total_days: 0,
+                total_solar_energy_kwh: 0,
+                total_home_kwh: 0,
+                total_from_grid_kwh: 0,
+                total_to_grid_kwh: 0,
+                total_from_powerwall_kwh: 0
+            };
+            
+            // Process monthly data to calculate totals
+            for (const item of monthlyData) {
+                totals.total_solar_energy_kwh += item.solar_energy_kwh;
+                totals.total_home_kwh += item.home_kwh;
+                totals.total_from_grid_kwh += item.from_grid_kwh;
+                totals.total_to_grid_kwh += item.to_grid_kwh;
+                totals.total_from_powerwall_kwh += item.from_powerwall_kwh;
+                
+                // Use the new fields from the API response
+                totals.total_days += item.num_days_in_month;
+            }
+            
+            // Round total days to integer
+            totals.total_days = Math.round(totals.total_days);
+            
+            // Calculate daily averages
+            const dailyAverages = {
+                total_solar_energy_kwh: totals.total_solar_energy_kwh / totals.total_days,
+                total_home_kwh: totals.total_home_kwh / totals.total_days,
+                total_from_grid_kwh: totals.total_from_grid_kwh / totals.total_days,
+                total_to_grid_kwh: totals.total_to_grid_kwh / totals.total_days,
+                total_from_powerwall_kwh: totals.total_from_powerwall_kwh / totals.total_days
+            };
+            
+            // Calculate additional metrics
+            const productionExports = totals.total_solar_energy_kwh - totals.total_to_grid_kwh;
+            const dailyProductionExports = dailyAverages.total_solar_energy_kwh - dailyAverages.total_to_grid_kwh;
+            
+            // Calculate statistics
+            const stats = {
+                total_days: Math.round(totals.total_days),
+                total_solar_energy_kwh: totals.total_solar_energy_kwh,
+                total_home_kwh: totals.total_home_kwh,
+                total_from_grid_kwh: totals.total_from_grid_kwh,
+                total_to_grid_kwh: totals.total_to_grid_kwh,
+                total_from_powerwall_kwh: totals.total_from_powerwall_kwh,
+                daily_solar_energy_kwh: dailyAverages.total_solar_energy_kwh,
+                daily_home_kwh: dailyAverages.total_home_kwh,
+                daily_from_grid_kwh: dailyAverages.total_from_grid_kwh,
+                daily_to_grid_kwh: dailyAverages.total_to_grid_kwh,
+                daily_from_powerwall_kwh: dailyAverages.total_from_powerwall_kwh,
+                production_exports: productionExports,
+                daily_production_exports: dailyProductionExports
+            };
+            
+            // Additional calculations for the stats table
+            const percentProduction = totals.total_home_kwh > 0 ?
+                (totals.total_solar_energy_kwh / totals.total_home_kwh) * 100 : 0;
+                
+            const percentProductionExports = totals.total_home_kwh > 0 ?
+                (productionExports / totals.total_home_kwh) * 100 : 0;
+                
+            // Use the new field from the API response for days with more than 2 kWh in exports
+            let daysWithMoreThanTwoKwhExports = 0;
+            for (const item of monthlyData) {
+                daysWithMoreThanTwoKwhExports += item.num_days_with_solar_energy_gt_2;
+            }
+            
+            // Total Powerwall Cycles (rounded to nearest integer)
+            const totalPowerwallCycles = Math.round(totals.total_from_powerwall_kwh / 13.5);
+            
+            return {
+                ...stats,
+                percent_production: percentProduction,
+                percent_production_exports: percentProductionExports,
+                days_with_two_plus_exports: daysWithMoreThanTwoKwhExports,
+                total_powerwall_cycles: totalPowerwallCycles
+            };
+        };
+        
+        // Helper function to format numbers with commas
+        const formatNumberWithCommas = (num) => {
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        };
+        
+        // Helper function to format decimal numbers with commas and one decimal
+        const formatDecimalWithCommas = (num) => {
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+        };
+        
+        // Function to populate the summary table
+        const populateSummaryTable = (stats) => {
+            const tbody = document.querySelector('#summaryTable tbody');
+            tbody.innerHTML = '';
+            
+            const rows = [
+                ['Total Days', stats.total_days.toFixed(0), ''],
+                ['Total Solar Energy', formatNumberWithCommas(stats.total_solar_energy_kwh), formatDecimalWithCommas(stats.daily_solar_energy_kwh)],
+                ['Total Home Usage', formatNumberWithCommas(stats.total_home_kwh), formatDecimalWithCommas(stats.daily_home_kwh)],
+                ['Total Grid Usage', formatNumberWithCommas(stats.total_from_grid_kwh), formatDecimalWithCommas(stats.daily_from_grid_kwh)],
+                ['Total Grid Exports', formatNumberWithCommas(stats.total_to_grid_kwh), formatDecimalWithCommas(stats.daily_to_grid_kwh)],
+                ['Total Powerwall Usage', formatNumberWithCommas(stats.total_from_powerwall_kwh), formatDecimalWithCommas(stats.daily_from_powerwall_kwh)],
+                ['Total Production - Exports', formatNumberWithCommas(stats.production_exports), formatDecimalWithCommas(stats.daily_production_exports)]
+            ];
+            
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row[0]}</td>
+                    <td>${row[1]}</td>
+                    <td>${row[2]}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+        
+        // Function to populate the stats table
+        const populateStatsTable = (stats) => {
+            const tbody = document.querySelector('#statsTable tbody');
+            tbody.innerHTML = '';
+            
+            const rows = [
+                ['% Production', `${stats.percent_production.toFixed(1)}%`],
+                ['% Production - Exports', `${stats.percent_production_exports.toFixed(1)}%`],
+                ['# Days w/ 2 kWh in Exports', stats.days_with_two_plus_exports.toFixed(0)],
+                ['Total Powerwall Cycles', stats.total_powerwall_cycles.toFixed(0)]
+            ];
+            
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row[0]}</td>
+                    <td>${row[1]}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+        
+        // Main function to load and display data
+        const loadData = async () => {
+            try {
+                // Show loading state
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('content').style.display = 'none';
+                
+                // Fetch monthly data
+                const monthlyData = await fetchMonthlyData();
+                
+                // Calculate statistics
+                const stats = calculateAllTimeStats(monthlyData);
+                
+                // Populate tables
+                populateSummaryTable(stats);
+                populateStatsTable(stats);
+                
+                // Hide loading and show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+            }
+        };
+        
+        // Load data when page loads
+        window.addEventListener('load', loadData);
+    </script>
+</body>
+</html>
