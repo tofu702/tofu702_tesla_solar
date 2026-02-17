@@ -126,75 +126,48 @@
                 total_home_kwh: 0,
                 total_from_grid_kwh: 0,
                 total_to_grid_kwh: 0,
-                total_from_powerwall_kwh: 0
+                total_from_powerwall_kwh: 0,
+                total_unexported_production: 0,
+                days_with_two_plus_exports: 0,
             };
             
-            // Process monthly data to calculate totals
+            // Process monthly data to calculate totals and collect additional metrics
             for (const item of monthlyData) {
                 totals.total_solar_energy_kwh += item.solar_energy_kwh;
                 totals.total_home_kwh += item.home_kwh;
                 totals.total_from_grid_kwh += item.from_grid_kwh;
                 totals.total_to_grid_kwh += item.to_grid_kwh;
                 totals.total_from_powerwall_kwh += item.from_powerwall_kwh;
+                totals.total_unexported_production += (item.solar_energy_kwh - item.to_grid_kwh);
                 
                 // Use the new fields from the API response
                 totals.total_days += item.num_days_in_month;
+                
+                // Collect days with more than 2 kWh in exports
+                totals.days_with_two_plus_exports += item.num_days_with_solar_energy_gt_2;
             }
-            
-            // Round total days to integer
-            totals.total_days = Math.round(totals.total_days);
-            
-            // Calculate daily averages
-            const dailyAverages = {
-                total_solar_energy_kwh: totals.total_solar_energy_kwh / totals.total_days,
-                total_home_kwh: totals.total_home_kwh / totals.total_days,
-                total_from_grid_kwh: totals.total_from_grid_kwh / totals.total_days,
-                total_to_grid_kwh: totals.total_to_grid_kwh / totals.total_days,
-                total_from_powerwall_kwh: totals.total_from_powerwall_kwh / totals.total_days
-            };
-            
-            // Calculate additional metrics
-            const productionExports = totals.total_solar_energy_kwh - totals.total_to_grid_kwh;
-            const dailyProductionExports = dailyAverages.total_solar_energy_kwh - dailyAverages.total_to_grid_kwh;
-            
-            // Calculate statistics
-            const stats = {
-                total_days: Math.round(totals.total_days),
-                total_solar_energy_kwh: totals.total_solar_energy_kwh,
-                total_home_kwh: totals.total_home_kwh,
-                total_from_grid_kwh: totals.total_from_grid_kwh,
-                total_to_grid_kwh: totals.total_to_grid_kwh,
-                total_from_powerwall_kwh: totals.total_from_powerwall_kwh,
-                daily_solar_energy_kwh: dailyAverages.total_solar_energy_kwh,
-                daily_home_kwh: dailyAverages.total_home_kwh,
-                daily_from_grid_kwh: dailyAverages.total_from_grid_kwh,
-                daily_to_grid_kwh: dailyAverages.total_to_grid_kwh,
-                daily_from_powerwall_kwh: dailyAverages.total_from_powerwall_kwh,
-                production_exports: productionExports,
-                daily_production_exports: dailyProductionExports
-            };
             
             // Additional calculations for the stats table
             const percentProduction = totals.total_home_kwh > 0 ?
                 (totals.total_solar_energy_kwh / totals.total_home_kwh) * 100 : 0;
                 
-            const percentProductionExports = totals.total_home_kwh > 0 ?
-                (productionExports / totals.total_home_kwh) * 100 : 0;
+            const percentUnexportedProduction = totals.total_home_kwh > 0 ?
+                (totals.total_unexported_production / totals.total_home_kwh) * 100 : 0;
                 
-            // Use the new field from the API response for days with more than 2 kWh in exports
-            let daysWithMoreThanTwoKwhExports = 0;
-            for (const item of monthlyData) {
-                daysWithMoreThanTwoKwhExports += item.num_days_with_solar_energy_gt_2;
-            }
-            
             // Total Powerwall Cycles (rounded to nearest integer)
             const totalPowerwallCycles = Math.round(totals.total_from_powerwall_kwh / 13.5);
             
             return {
-                ...stats,
+                ...totals,
+                daily_solar_energy_kwh: totals.total_solar_energy_kwh / totals.total_days,
+                daily_home_kwh: totals.total_home_kwh / totals.total_days,
+                daily_from_grid_kwh: totals.total_from_grid_kwh / totals.total_days,
+                daily_to_grid_kwh: totals.total_to_grid_kwh / totals.total_days,
+                daily_from_powerwall_kwh: totals.total_from_powerwall_kwh / totals.total_days,
+                daily_unexported_production: totals.total_unexported_production / totals.total_days,
                 percent_production: percentProduction,
-                percent_production_exports: percentProductionExports,
-                days_with_two_plus_exports: daysWithMoreThanTwoKwhExports,
+                percent_unexported_production: percentUnexportedProduction,
+                days_with_two_plus_exports: totals.days_with_two_plus_exports,
                 total_powerwall_cycles: totalPowerwallCycles
             };
         };
@@ -221,13 +194,12 @@
             tbody.innerHTML = '';
             
             const rows = [
-                ['Total Days', stats.total_days.toFixed(0), ''],
-                ['Total Solar Energy', formatNumberWithCommas(stats.total_solar_energy_kwh), formatDecimalWithCommas(stats.daily_solar_energy_kwh)],
-                ['Total Home Usage', formatNumberWithCommas(stats.total_home_kwh), formatDecimalWithCommas(stats.daily_home_kwh)],
-                ['Total Grid Usage', formatNumberWithCommas(stats.total_from_grid_kwh), formatDecimalWithCommas(stats.daily_from_grid_kwh)],
-                ['Total Grid Exports', formatNumberWithCommas(stats.total_to_grid_kwh), formatDecimalWithCommas(stats.daily_to_grid_kwh)],
-                ['Total Powerwall Usage', formatNumberWithCommas(stats.total_from_powerwall_kwh), formatDecimalWithCommas(stats.daily_from_powerwall_kwh)],
-                ['Total Production - Exports', formatNumberWithCommas(stats.production_exports), formatDecimalWithCommas(stats.daily_production_exports)]
+                ['Home Usage', formatNumberWithCommas(stats.total_home_kwh), formatDecimalWithCommas(stats.daily_home_kwh)],
+                ['Solar Energy Produced', formatNumberWithCommas(stats.total_solar_energy_kwh), formatDecimalWithCommas(stats.daily_solar_energy_kwh)],
+                ['Production - Exports (Production Used)', formatNumberWithCommas(stats.total_unexported_production), formatDecimalWithCommas(stats.daily_unexported_production)],
+                ['Grid Usage', formatNumberWithCommas(stats.total_from_grid_kwh), formatDecimalWithCommas(stats.daily_from_grid_kwh)],
+                ['Grid Exports', formatNumberWithCommas(stats.total_to_grid_kwh), formatDecimalWithCommas(stats.daily_to_grid_kwh)],
+                ['Powerwall Usage', formatNumberWithCommas(stats.total_from_powerwall_kwh), formatDecimalWithCommas(stats.daily_from_powerwall_kwh)],
             ];
             
             rows.forEach(row => {
@@ -247,8 +219,9 @@
             tbody.innerHTML = '';
             
             const rows = [
+                ['Total Days', stats.total_days.toFixed(0)],
                 ['% Production', `${stats.percent_production.toFixed(1)}%`],
-                ['% Production - Exports', `${stats.percent_production_exports.toFixed(1)}%`],
+                ['% Production - Exports', `${stats.percent_unexported_production.toFixed(1)}%`],
                 ['# Days w/ 2 kWh in Exports', stats.days_with_two_plus_exports.toFixed(0)],
                 ['Total Powerwall Cycles', stats.total_powerwall_cycles.toFixed(0)]
             ];
