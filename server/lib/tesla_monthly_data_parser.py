@@ -14,6 +14,7 @@ class DailyData(pydantic.BaseModel):
   solar_energy_kwh: float = None
   from_grid_kwh: float = None
   to_grid_kwh: float = None
+  home_minus_solar_kwh: float = None
 
 
 class MonthlyData(pydantic.BaseModel):
@@ -23,6 +24,7 @@ class MonthlyData(pydantic.BaseModel):
   solar_energy_kwh: float = None
   from_grid_kwh: float = None
   to_grid_kwh: float = None
+  home_minus_solar_kwh: float = None
   num_days_in_month: int = None
   num_days_with_solar_energy_gt_2: int = None
 
@@ -54,9 +56,12 @@ class TeslaDataParser:
         solar_energy_kwh = float(row[3])
         from_grid_kwh = float(row[4])
         to_grid_kwh = float(row[5])
+        home_minus_solar_kwh = home_kwh - solar_energy_kwh
+
 
         reading = DailyData(date=date, home_kwh=home_kwh, from_powerwall_kwh=from_powerwall_kwh,
-                            solar_energy_kwh=solar_energy_kwh, from_grid_kwh=from_grid_kwh, to_grid_kwh=to_grid_kwh)
+                            solar_energy_kwh=solar_energy_kwh, from_grid_kwh=from_grid_kwh, to_grid_kwh=to_grid_kwh,
+                            home_minus_solar_kwh=home_minus_solar_kwh)
         parsed_daily_data.append(reading)
     return parsed_daily_data
 
@@ -108,6 +113,7 @@ class TeslaDataParser:
         solar_energy_kwh=0,
         from_grid_kwh=0,
         to_grid_kwh=0,
+        home_minus_solar_kwh=0,
         num_days_in_month=0,
         num_days_with_solar_energy_gt_2=0,
       )
@@ -118,6 +124,7 @@ class TeslaDataParser:
         monthly_data.solar_energy_kwh += daily_data.solar_energy_kwh
         monthly_data.from_grid_kwh += daily_data.from_grid_kwh
         monthly_data.to_grid_kwh += daily_data.to_grid_kwh
+        monthly_data.home_minus_solar_kwh += daily_data.home_minus_solar_kwh
         monthly_data.num_days_in_month += 1
 
         if daily_data.to_grid_kwh > 2:
