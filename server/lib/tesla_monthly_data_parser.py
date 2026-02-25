@@ -100,45 +100,33 @@ class TeslaDataParser:
       year_month_str = file_name.replace('.csv', '')
       year, month = map(int, year_month_str.split('_'))
       first_day_of_month = datetime.date(year, month, 1)
-      
-      # Aggregate daily data into monthly totals
-      monthly_totals = {
-        'home_kwh': 0.0,
-        'from_powerwall_kwh': 0.0,
-        'solar_energy_kwh': 0.0,
-        'from_grid_kwh': 0.0,
-        'to_grid_kwh': 0.0,
-        'num_days': 0,
-        'num_days_with_more_than_2kwh_solar': 0,
-      }
-      
-      for daily_data in daily_data_list:
-        monthly_totals['home_kwh'] += daily_data.home_kwh
-        monthly_totals['from_powerwall_kwh'] += daily_data.from_powerwall_kwh
-        monthly_totals['solar_energy_kwh'] += daily_data.solar_energy_kwh
-        monthly_totals['from_grid_kwh'] += daily_data.from_grid_kwh
-        monthly_totals['to_grid_kwh'] += daily_data.to_grid_kwh
-        monthly_totals['num_days'] += 1
 
-        # Count days with solar energy > 2 kWh
-        if daily_data.to_grid_kwh > 2:
-          monthly_totals['num_days_with_more_than_2kwh_solar'] += 1
-
-      # Create MonthlyData object with the aggregated values
       monthly_data = MonthlyData(
         first_day_of_month=first_day_of_month,
-        home_kwh=monthly_totals['home_kwh'],
-        from_powerwall_kwh=monthly_totals['from_powerwall_kwh'],
-        solar_energy_kwh=monthly_totals['solar_energy_kwh'],
-        from_grid_kwh=monthly_totals['from_grid_kwh'],
-        to_grid_kwh=monthly_totals['to_grid_kwh'],
-        num_days_in_month=monthly_totals['num_days'],
-        num_days_with_solar_energy_gt_2=monthly_totals['num_days_with_more_than_2kwh_solar']
+        home_kwh=0,
+        from_powerwall_kwh=0,
+        solar_energy_kwh=0,
+        from_grid_kwh=0,
+        to_grid_kwh=0,
+        num_days_in_month=0,
+        num_days_with_solar_energy_gt_2=0,
       )
+
+      for daily_data in daily_data_list:
+        monthly_data.home_kwh += daily_data.home_kwh
+        monthly_data.from_powerwall_kwh += daily_data.from_powerwall_kwh
+        monthly_data.solar_energy_kwh += daily_data.solar_energy_kwh
+        monthly_data.from_grid_kwh += daily_data.from_grid_kwh
+        monthly_data.to_grid_kwh += daily_data.to_grid_kwh
+        monthly_data.num_days_in_month += 1
+
+        if daily_data.to_grid_kwh > 2:
+          monthly_data.num_days_with_solar_energy_gt_2 += 1
       
       monthly_data_list.append(monthly_data)
     
     return monthly_data_list
+
 
 def main():
   dir_path = "/Volumes/github/tofu702_tesla_solar/example_data/"
