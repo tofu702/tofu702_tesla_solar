@@ -125,6 +125,10 @@
                 <input type="radio" id="from_powerwall_kwh" name="metric" value="from_powerwall_kwh">
                 <label for="from_powerwall_kwh">Powerwall Usage (kWh)</label>
             </div>
+            <div class="radio-group">
+                <input type="radio" id="home_minus_solar_kwh" name="metric" value="home_minus_solar_kwh">
+                <label for="home_minus_solar_kwh">Underproduction (kWh)</label>
+            </div>
         </div>
 
         <div class="chart-container">
@@ -141,7 +145,8 @@
             'home_kwh': { name: "Home Usage", unitText: "kWh" },
             'from_grid_kwh': { name: "Grid Usage", unitText: "kWh" },
             'to_grid_kwh': { name: "Grid Exports", unitText: "kWh" },
-            'from_powerwall_kwh': { name: "Powerwall Usage", unitText: "kWh" }
+            'from_powerwall_kwh': { name: "Powerwall Usage", unitText: "kWh" },
+            'home_minus_solar_kwh': { name: "Underproduction", unitText: "kWh"},
         };
         
         // Color mapping for years

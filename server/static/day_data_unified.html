@@ -215,6 +215,11 @@
                     Show Powerwall Usage
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showPowerwallUsage'); return false;">[Only]</a>
                 </label>
+                <label>
+                    <input type="checkbox" id="showUnderproduction" checked>
+                    Show Underproduction (Home - Solar)
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showUnderproduction'); return false;">[Only]</a>
+                </label>
             </div>
         </div>
     </div>
@@ -258,6 +263,12 @@
                 name: "Powerwall Usage",
                 unitText: "kWh",
                 borderColorRGB: [255, 159, 64],
+            },
+            home_minus_solar_kwh: {
+                checkboxName: "showUnderproduction",
+                name: "Underproduction",
+                unitText: "kWh",
+                borderColorRGB: [0, 0, 0],
             }
         }
 
@@ -320,6 +331,7 @@
                 const from_grid_kwh = [];
                 const to_grid_kwh = [];
                 const from_powerwall_kwh = [];
+                const home_minus_solar_kwh = [];
 
                 // Process the data from the API response
                 for (const [date, data] of Object.entries(solar_data.days_to_data)) {
@@ -329,12 +341,13 @@
                     from_grid_kwh.push(data.from_grid_kwh);
                     to_grid_kwh.push(data.to_grid_kwh);
                     from_powerwall_kwh.push(data.from_powerwall_kwh);
+                    home_minus_solar_kwh.push(data.home_minus_solar_kwh);
                 }
 
-                return { labels, solar_energy_kwh, home_kwh, from_grid_kwh, to_grid_kwh, from_powerwall_kwh };
+                return { labels, solar_energy_kwh, home_kwh, from_grid_kwh, to_grid_kwh, from_powerwall_kwh, home_minus_solar_kwh };
             } catch (error) {
                 console.error('Error fetching solar data:', error);
-                return {labels: [], solar_energy_kwh: [], home_kwh: [], from_grid_kwh: [], to_grid_kwh: [], from_powerwall_kwh: []};
+                return {labels: [], solar_energy_kwh: [], home_kwh: [], from_grid_kwh: [], to_grid_kwh: [], from_powerwall_kwh: [], home_minus_solar_kwh: []};
             }
         };
 
@@ -648,6 +661,7 @@
                 const from_grid_kwh = [];
                 const to_grid_kwh = [];
                 const from_powerwall_kwh = [];
+                const home_minus_solar_kwh =[]
                 
                 // Process the data from the API response
                 if (solar_data && solar_data.days_to_data) {
@@ -660,6 +674,7 @@
                             from_grid_kwh.push(data?.from_grid_kwh || 0);
                             to_grid_kwh.push(data?.to_grid_kwh || 0);
                             from_powerwall_kwh.push(data?.from_powerwall_kwh || 0);
+                            home_minus_solar_kwh.push(data?.home_minus_solar_kwh || 0);
                         }
                     }
                 }
@@ -672,6 +687,7 @@
                     from_grid_kwh,
                     to_grid_kwh,
                     from_powerwall_kwh,
+                    home_minus_solar_kwh,
                     startDate: aggregationStartDate,
                     endDate: endDate
                 };
@@ -736,6 +752,9 @@ document.getElementById('showGridExports').addEventListener('change', function()
     updateUnifiedChartWithData();
 });
 document.getElementById('showPowerwallUsage').addEventListener('change', function() {
+    updateUnifiedChartWithData();
+});
+document.getElementById('showUnderproduction').addEventListener('change', function() {
     updateUnifiedChartWithData();
 });
 
