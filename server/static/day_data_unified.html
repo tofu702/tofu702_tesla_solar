@@ -110,7 +110,7 @@
                 <div class = "control-group">
                     <div class="control-group">
                         <label for="yearSelect">Select Year:</label>
-                        <select id="yearSelect">
+                        <select id="yearSelect" class="metricControl">
                             <option value="2024">2024</option>
                             <option value="2025" selected>2025</option>
                             <option value="2026">2026</option>
@@ -119,7 +119,7 @@
                     
                     <div class="control-group">
                         <label for="monthSelect">Select Month:</label>
-                        <select id="monthSelect">
+                        <select id="monthSelect" class="metricControl">
                             <option value="1">January</option>
                             <option value="2">February</option>
                             <option value="3">March</option>
@@ -139,7 +139,7 @@
                     
                     <div class="control-group">
                         <label for="secondaryYearSelect">Comparison Year:</label>
-                        <select id="secondaryYearSelect">
+                        <select id="secondaryYearSelect" class="metricControl">
                             <option value="">None</option>
                             <option value="2024"selected >2024</option>
                             <option value="2025">2025</option>
@@ -149,7 +149,7 @@
                     
                     <div class="control-group">
                         <label>
-                            <input type="checkbox" id="enableSecondaryYear">
+                            <input type="checkbox" id="enableSecondaryYear" class="metricControl">
                             Enable Comparison Year
                         </label>
                     </div>
@@ -162,7 +162,7 @@
                 
                 <div class="control-group">
                     <label for="aggregationSelect">Aggregation Mode:</label>
-                    <select id="aggregationSelect">
+                    <select id="aggregationSelect" class="metricControl">
                         <option value="none">None</option>
                         <option value="7day_avg">7 Day Moving Average</option>
                         <option value="15day_avg">15 Day Moving Average</option>
@@ -171,7 +171,7 @@
                     <br/>
                     <br/>
                     <label>
-                        <input type="checkbox" id="aggregationOnlySelector">
+                        <input type="checkbox" id="aggregationOnlySelector" class="metricControl">
                         Only Show Aggregates
                     </label>
                 </div>
@@ -186,37 +186,37 @@
             <h3>Chart Visibility Controls</h3>
             <div class="checkbox-container">
                 <label>
-                    <input type="checkbox" id="showDayLength" checked>
+                    <input type="checkbox" id="showDayLength" class="metricCheckbox" checked>
                     Show Day Length
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showDayLength'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showSolarData" checked>
+                    <input type="checkbox" id="showSolarData" class="metricCheckbox" checked>
                     Show Solar Data
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showSolarData'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showHomeUsage" checked>
+                    <input type="checkbox" id="showHomeUsage" class="metricCheckbox" checked>
                     Show Home Usage
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showHomeUsage'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showGridUsage" checked>
+                    <input type="checkbox" id="showGridUsage" class="metricCheckbox" checked>
                     Show Grid Usage
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showGridUsage'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showGridExports" checked>
+                    <input type="checkbox" id="showGridExports" class="metricCheckbox" checked>
                     Show Grid Exports
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showGridExports'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showPowerwallUsage" checked>
+                    <input type="checkbox" id="showPowerwallUsage" class="metricCheckbox" checked>
                     Show Powerwall Usage
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showPowerwallUsage'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showUnderproduction" checked>
+                    <input type="checkbox" id="showUnderproduction" class="metricCheckbox" checked>
                     Show Underproduction (Home - Solar)
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showUnderproduction'); return false;">[Only]</a>
                 </label>
@@ -697,73 +697,36 @@
             }
         };
 
-// Function to handle "[Only]" button clicks
-function onlyButtonClicked(targetCheckboxId) {
-    // Uncheck all checkboxes
-    document.querySelectorAll('.checkbox-container input[type="checkbox"]').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-    
-    // Check only the target checkbox
-    const targetCheckbox = document.getElementById(targetCheckboxId);
-    if (targetCheckbox) {
-        targetCheckbox.checked = true;
-    }
-    
-    // Update the chart to reflect changes
-    updateUnifiedChartWithData();
-}
+        // Function to handle "[Only]" button clicks
+        function onlyButtonClicked(targetCheckboxId) {
+            // Uncheck all checkboxes
+            for (checkbox of document.getElementsByClassName("metricCheckbox")) {
+                checkbox.checked = false;
+            }
+            
+            // Check only the target checkbox
+            const targetCheckbox = document.getElementById(targetCheckboxId);
+            if (targetCheckbox) {
+                targetCheckbox.checked = true;
+            }
+            
+            // Update the chart to reflect changes
+            updateUnifiedChartWithData();
+        }
 
-// Add event listeners for Year and Month selectors to auto-refresh
-document.getElementById('yearSelect').addEventListener('change', updateUnifiedChartWithData);
-document.getElementById('monthSelect').addEventListener('change', updateUnifiedChartWithData);
+        // Add event listener to update button (still kept for manual override)
+        document.getElementById('updateChartBtn').addEventListener('click', updateUnifiedChartWithData);
 
-// Add event listener to update button (still kept for manual override)
-document.getElementById('updateChartBtn').addEventListener('click', updateUnifiedChartWithData);
-
-// Add event listener for aggregation mode selector
-document.getElementById('aggregationSelect').addEventListener('change', updateUnifiedChartWithData);
-
-// Add event listener for changes to "Only Show Aggregates
-document.getElementById("aggregationOnlySelector").addEventListener('change', updateUnifiedChartWithData);
-
-// Add event listeners for secondary year controls
-document.getElementById('enableSecondaryYear').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-document.getElementById('secondaryYearSelect').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-
-// Add event listeners to checkboxes
-document.getElementById('showDayLength').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-document.getElementById('showSolarData').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-document.getElementById('showHomeUsage').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-document.getElementById('showGridUsage').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-document.getElementById('showGridExports').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-document.getElementById('showPowerwallUsage').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-document.getElementById('showUnderproduction').addEventListener('change', function() {
-    updateUnifiedChartWithData();
-});
-
+        const metricCheckboxes = document.getElementsByClassName("metricCheckbox");
+        const metricControls = document.getElementsByClassName("metricControl");
+        for (const checkbox of [...metricCheckboxes,...metricControls]) {
+            checkbox.addEventListener("change", updateUnifiedChartWithData);
+        }
 
         createUnifiedChart();
         
         // Initial chart rendering
         updateUnifiedChartWithData();
-        
     </script>
 </body>
 </html>
