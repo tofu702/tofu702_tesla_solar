@@ -232,7 +232,7 @@
                 name: "Day Length",
                 unitText: "hours",
                 borderColorRGB: [75, 192, 192],
-                yAxisID: 'y1'
+                yAxisID: 'y2'
             },
             solar_energy_kwh: {
                 checkboxName: "showSolarData",
@@ -352,7 +352,7 @@
         };
 
         function createDatasetGeneric(data, lineConfig, label, borderColor, borderDash) {
-            const yAxisID = lineConfig.yAxisID ?? "y2";
+            const yAxisID = lineConfig.yAxisID ?? "y1";
             borderColorText = disableStableColors ? null : `rgb(${borderColor})`;
             backgroundColorText = disableStableColors ? null : `rgba(${borderColor}, 0.2)`;
             return {
@@ -389,16 +389,24 @@
             maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, [5,5]);
         }
 
-        function computeMaxkWh(datasets) {
-            let runningMax = 0;
+        function computeMinAndMaxkWhDisplayRange(datasets) {
+            let runningMax = Number.MIN_SAFE_INTEGER, runningMin = Number.MAX_SAFE_INTEGER;
             for (let i=0; i < datasets.length; i++) {
                 dataset = datasets[i];
-                if (dataset.yAxisID != "y2") {
+                if (dataset.yAxisID != "y1") {
                     continue;
                 }
                 runningMax = Math.max(Math.max(...dataset.data), runningMax);
+                runningMin = Math.min(Math.min(...dataset.data), runningMin);
             }
-            return runningMax > 0 ?  runningMax : 1;
+
+            // Add some padding and round up/down to integers
+            const [paddedMin, paddedMax] = [Math.floor(runningMin*1.1), Math.ceil(runningMax*1.1)];
+
+            const finalMax = Math.max(1, paddedMax); // Ensure Max is at least 1
+            const finalMin = Math.min(0, paddedMin); // Ensure Min is at most 0
+
+            return [finalMin, finalMax];
         }
 
         // Function to create a unified chart with dual y-axes
@@ -434,23 +442,30 @@
                             }
                         },
                         y1: {
-                            title: {
-                                display: true,
-                                text: 'Day Length (hours)'
+                            grid: {
+                                lineWidth: function(context) {
+                                    return (context.tick.value == 0) ? 4 : 1;
+                                }
                             },
-                            position: 'left',
-                            min: 0,
-                            max: 24
-                        },
-                        y2: {
                             title: {
                                 display: true,
                                 text: 'Energy (kWh)'
                             },
-                            position: 'right',
+                            display: 'auto',
+                            position: 'left',
                             min: 0,
                             // We'll dynamically set max based on data
-                        }
+                        },
+                        y2: {
+                            title: {
+                                display: true,
+                                text: 'Day Length (hours)'
+                            },
+                            display: 'auto',
+                            position: 'right',
+                            min: 0,
+                            max: 24
+                        },
                     }
                 }
             });
@@ -508,14 +523,15 @@
                 const maxDayLength = Math.max(...primaryYearDayLengthData.dayLengths);
                 
                 // Set Y-axis min and max with some padding
-                unifiedChart.options.scales.y1.min = Math.max(0, minDayLength - 0.5);
-                unifiedChart.options.scales.y1.max = Math.min(24, maxDayLength + 0.5);
+                unifiedChart.options.scales.y2.min = Math.max(0, minDayLength - 0.5);
+                unifiedChart.options.scales.y2.max = Math.min(24, maxDayLength + 0.5);
             }
             
             // For all energy data, set max dynamically
             if (unifiedChart.data.datasets.length > 0) {
-                maxEnergy = computeMaxkWh(unifiedChart.data.datasets);
-                unifiedChart.options.scales.y2.max = maxEnergy * 1.1; // Add 10% padding
+                const [minKWh, maxKWh] = computeMinAndMaxkWhDisplayRange(unifiedChart.data.datasets);
+                unifiedChart.options.scales.y1.max = maxKWh;
+                unifiedChart.options.scales.y1.min = minKWh;
             }
             
             unifiedChart.update();
