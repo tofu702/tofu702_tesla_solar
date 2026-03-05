@@ -43,6 +43,9 @@ class TeslaDataParser:
     """Parse a CSV file and return a list of EnergyReading objects"""
     parsed_daily_data = []
 
+    if not os.path.exists(file_path):
+      return []
+
     with open(file_path, 'r') as csvfile:
       # Skip the first line (header line with line numbers)
       next(csvfile)
