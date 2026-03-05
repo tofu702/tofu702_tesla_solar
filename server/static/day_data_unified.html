@@ -542,7 +542,7 @@
             const dayLengthData = await fetchDayLengthData(year, month);
             const solarStats = await fetchSolarStats(year, month);
 
-            maybeAddRawDataset(dayLengthData.dayLengths, lineConfigs.dayLengths);
+            maybeAddRawDataset(dayLengthData.dayLengths, lineConfigs.dayLengths, year);
             if (!isAggregationOnly || aggregationMode == 'none') {
                 for (const [key, lineConfig] of Object.entries(lineConfigs)) {
                     if (key == "dayLengths") {
