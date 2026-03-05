@@ -400,8 +400,8 @@
                 runningMin = Math.min(Math.min(...dataset.data), runningMin);
             }
 
-            // Add some padding and round up/down to integers
-            const [paddedMin, paddedMax] = [Math.floor(runningMin*1.1), Math.ceil(runningMax*1.1)];
+            // Add some padding and round up/down to nearly multiple of 5
+            const [paddedMin, paddedMax] = [Math.floor(runningMin*1.1/5)*5, Math.ceil(runningMax*1.1/5)*5];
 
             const finalMax = Math.max(1, paddedMax); // Ensure Max is at least 1
             const finalMin = Math.min(0, paddedMin); // Ensure Min is at most 0
