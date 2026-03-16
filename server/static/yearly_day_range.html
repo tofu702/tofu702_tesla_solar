@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year Over Year Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+        }
+        .main-content {
+            flex: 1;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .control-group {
+            margin: 10px;
+            display: inline-block;
+            vertical-align: top;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, button, input[type="number"] {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-top: 20px;
+        }
+        .checkbox-sidebar {
+            width: 250px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            height: fit-content;
+        }
+        .checkbox-container {
+            margin: 10px 0;
+        }
+        .checkbox-container label {
+            display: block;
+            margin: 10px 0;
+            font-weight: normal;
+        }
+        .only-link {
+            color: #007bff;
+            text-decoration: underline;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .only-link:hover {
+            color: #0056b3;
+        }
+        .year-checkbox-container {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .year-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .date-range-inputs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .date-part-input {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .checkbox-sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <h1>Year Over Year Comparison</h1>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Date Range:</label>
+                    <div class="date-range-inputs" id="dateRangeInputs">
+                        <div class="date-part-input">
+                            <label for="startDateMonth">Start Month</label>
+                            <select id="startDateMonth" class="metricControl">
+                                <option value="1" selected>January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="date-part-input">
+                            <label for="startDateDay">Day</label>
+                            <input type="number" id="startDateDay" class="metricControl" min="1" max="31" value="1">
+                        </div>
+                        <span style="font-weight: bold;">to</span>
+                        <div class="date-part-input">
+                            <label for="endDateMonth">End Month</label>
+                            <select id="endDateMonth" class="metricControl">
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6" >June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12" selected>December</option>
+                            </select>
+                        </div>
+                        <div class="date-part-input">
+                            <label for="endDateDay">Day</label>
+                            <input type="number" id="endDateDay" class="metricControl" min="1" max="31" value="31">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Years:</label>
+                    <div class="year-checkbox-container" id="yearCheckboxes">
+                        <div class="year-checkbox-item">
+                            <input type="checkbox" id="year2024" class="metricControl" value="2024">
+                            <label for="year2024" style="margin: 0;">2024</label>
+                        </div>
+                        <div class="year-checkbox-item">
+                            <input type="checkbox" id="year2025" class="metricControl" value="2025" checked>
+                            <label for="year2025" style="margin: 0;">2025</label>
+                        </div>
+                        <div class="year-checkbox-item">
+                            <input type="checkbox" id="year2026" class="metricControl" value="2026" checked>
+                            <label for="year2026" style="margin: 0;">2026</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="aggregationSelect">Aggregation Mode:</label>
+                    <select id="aggregationSelect" class="metricControl">
+                        <option value="none">None</option>
+                        <option value="7day_avg">7 Day Moving Average</option>
+                        <option value="15day_avg">15 Day Moving Average</option>
+                        <option value="7day_max">7 Day Moving Max</option>
+                    </select>
+                    <br/>
+                    <br/>
+                    <label>
+                        <input type="checkbox" id="aggregationOnlySelector" class="metricControl">
+                        Only Show Aggregates
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <br>
+                    <button id="updateChartBtn">Update Chart</button>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="unifiedChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="checkbox-sidebar">
+            <h3>Chart Visibility Controls</h3>
+            <div class="checkbox-container">
+                <label>
+                    <input type="checkbox" id="showDayLength" class="metricCheckbox" checked>
+                    Show Day Length
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showDayLength'); return false;">[Only]</a>
+                </label>
+                <label>
+                    <input type="checkbox" id="showSolarData" class="metricCheckbox" checked>
+                    Show Solar Data
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showSolarData'); return false;">[Only]</a>
+                </label>
+                <label>
+                    <input type="checkbox" id="showHomeUsage" class="metricCheckbox" checked>
+                    Show Home Usage
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showHomeUsage'); return false;">[Only]</a>
+                </label>
+                <label>
+                    <input type="checkbox" id="showGridUsage" class="metricCheckbox" checked>
+                    Show Grid Usage
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showGridUsage'); return false;">[Only]</a>
+                </label>
+                <label>
+                    <input type="checkbox" id="showGridExports" class="metricCheckbox" checked>
+                    Show Grid Exports
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showGridExports'); return false;">[Only]</a>
+                </label>
+                <label>
+                    <input type="checkbox" id="showPowerwallUsage" class="metricCheckbox" checked>
+                    Show Powerwall Usage
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showPowerwallUsage'); return false;">[Only]</a>
+                </label>
+                <label>
+                    <input type="checkbox" id="showUnderproduction" class="metricCheckbox" checked>
+                    Show Underproduction (Home - Solar)
+                    <a href="#" class="only-link" onclick="onlyButtonClicked('showUnderproduction'); return false;">[Only]</a>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const disableStableColors = true;
+        const lineConfigs = {
+            dayLengths: {
+                checkboxName: "showDayLength",
+                name: "Day Length",
+                unitText: "hours",
+                borderColorRGB: [75, 192, 192],
+                yAxisID: 'y2'
+            },
+            solar_energy_kwh: {
+                checkboxName: "showSolarData",
+                name: "Solar Energy",
+                unitText: "kWh",
+                borderColorRGB: [255, 99, 132],
+            },
+            home_kwh: {
+                checkboxName: "showHomeUsage",
+                name: "Home Usage",
+                unitText: "kWh",
+                borderColorRGB: [54, 162, 235],
+            },
+            from_grid_kwh: {
+                checkboxName: "showGridUsage",
+                name: "Grid Usage",
+                unitText: "kWh",
+                borderColorRGB: [255, 205, 86],
+            },
+            to_grid_kwh: {
+                checkboxName: "showGridExports",
+                name: "Grid Exports",
+                unitText: "kWh",
+                borderColorRGB: [153, 205, 255],
+            },
+            from_powerwall_kwh: {
+                checkboxName: "showPowerwallUsage",
+                name: "Powerwall Usage",
+                unitText: "kWh",
+                borderColorRGB: [255, 159, 64],
+            },
+            home_minus_solar_kwh: {
+                checkboxName: "showUnderproduction",
+                name: "Underproduction",
+                unitText: "kWh",
+                borderColorRGB: [0, 0, 0],
+            }
+        }
+
+        let unifiedChart = null;
+        let selectedYears = [];
+        let startMonth = 1;
+        let startDay = 1;
+        let endMonth = 6;
+        let endDay = 30;
+
+        function getSelectedYears() {
+            const years = [];
+            for (let year of [2024, 2025, 2026]) {
+                const checkbox = document.getElementById(`year${year}`);
+                if (checkbox && checkbox.checked) {
+                    years.push(year);
+                }
+            }
+            return years;
+        }
+
+        function getDateRangeForYear(year, month, day) {
+            let date = new Date(year, month - 1, day);
+            const dayOfWeek = date.getDay();
+            const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            date.setDate(date.getDate() - daysToSubtract);
+            return date.toISOString().split('T')[0];
+        }
+
+        function formatDateLabel(dateString) {
+            const parts = dateString.split('-');
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+            return `${month}/${day}`;
+        }
+
+        const fetchDayLengthData = async (startDate, endDate) => {
+            try {
+                const response = await fetch(`/sun/range?start_date=${startDate}&end_date=${endDate}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                const dayLengths = [];
+                const dateStrings = [];
+                const formattedLabels = [];
+                
+                for (const [date, stats] of Object.entries(data.days_to_stats)) {
+                    dayLengths.push(stats.day_length_hours);
+                    dateStrings.push(date);
+                    formattedLabels.push(formatDateLabel(date));
+                }
+                
+                return { dayLengths, dateStrings, formattedLabels };
+            } catch (error) {
+                console.error('Error fetching day length data:', error);
+                return {dayLengths: [], dateStrings: [], formattedLabels: []};
+            }
+        };
+
+        const fetchSolarStats = async (startDate, endDate) => {
+            try {
+                const response = await fetch(`/day_data/range?start_date=${startDate}&end_date=${endDate}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const solar_data = await response.json();
+
+                const solar_energy_kwh = [];
+                const home_kwh = [];
+                const from_grid_kwh = [];
+                const to_grid_kwh = [];
+                const from_powerwall_kwh = [];
+                const home_minus_solar_kwh = [];
+                const dateStrings = [];
+
+                for (const [date, data] of Object.entries(solar_data.days_to_data)) {
+                    solar_energy_kwh.push(data.solar_energy_kwh);
+                    home_kwh.push(data.home_kwh);
+                    from_grid_kwh.push(data.from_grid_kwh);
+                    to_grid_kwh.push(data.to_grid_kwh);
+                    from_powerwall_kwh.push(data.from_powerwall_kwh);
+                    home_minus_solar_kwh.push(data.home_minus_solar_kwh);
+                    dateStrings.push(date);
+                }
+
+                return { solar_energy_kwh, home_kwh, from_grid_kwh, to_grid_kwh, from_powerwall_kwh, home_minus_solar_kwh, dateStrings };
+            } catch (error) {
+                console.error('Error fetching solar data:', error);
+                return {solar_energy_kwh: [], home_kwh: [], from_grid_kwh: [], to_grid_kwh: [], from_powerwall_kwh: [], home_minus_solar_kwh: [], dateStrings: []};
+            }
+        };
+
+        function createDatasetGeneric(data, lineConfig, label, borderColor, borderDash) {
+            const yAxisID = lineConfig.yAxisID ?? "y1";
+            borderColorText = disableStableColors ? null : `rgb(${borderColor})`;
+            backgroundColorText = disableStableColors ? null : `rgba(${borderColor}, 0.2)`;
+            return {
+                label: label,
+                data: data,
+                borderColor: borderColorText,
+                backgroundColor: backgroundColorText,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.1,
+                yAxisID: yAxisID,
+                borderDash: borderDash,
+            }
+        }
+
+        function maybeAddDatasetGeneric(data, lineConfig, label, borderColor, borderDash) {
+            const isChecked = document.getElementById(lineConfig.checkboxName).checked;
+
+            if (!isChecked) {
+                return;
+            }
+
+            const dataset = createDatasetGeneric(data, lineConfig, label, borderColor, borderDash);
+            unifiedChart.data.datasets.push(dataset);
+        }
+
+        function maybeAddRawDataset(data, lineConfig, year, dateStrings) {
+            const label = `${lineConfig.name}  (${lineConfig.unitText}) - ${year}`;
+            maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, []);
+        }
+
+        function maybeAddAggregationDataset(data, lineConfig, aggregationName, aggregationDays, year) {
+            const label = `${lineConfig.name} - ${year} - ${aggregationName} ${aggregationDays} Days`;
+            maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, [5,5]);
+        }
+
+        function computeMinAndMaxkWhDisplayRange(datasets) {
+            let runningMax = Number.MIN_SAFE_INTEGER, runningMin = Number.MAX_SAFE_INTEGER;
+            for (let i=0; i < datasets.length; i++) {
+                const dataset = datasets[i];
+                if (dataset.yAxisID != "y1") {
+                    continue;
+                }
+                const validValues = dataset.data.filter(v => v !== null && v !== undefined);
+                if (validValues.length > 0) {
+                    runningMax = Math.max(Math.max(...validValues), runningMax);
+                    runningMin = Math.min(Math.min(...validValues), runningMin);
+                }
+            }
+
+            if (runningMax === Number.MIN_SAFE_INTEGER || runningMin === Number.MAX_SAFE_INTEGER) {
+                return [0, 100];
+            }
+
+            const [paddedMin, paddedMax] = [Math.floor(runningMin*1.1/5)*5, Math.ceil(runningMax*1.1/5)*5];
+
+            const finalMax = Math.max(1, paddedMax);
+            const finalMin = Math.min(0, paddedMin);
+
+            return [finalMin, finalMax];
+        }
+
+        function createUnifiedChart() {
+            const initialData = {labels: [], dayLengths: [], solar_energy_kwh: [], home_kwh: [], from_grid_kwh: [], to_grid_kwh: [], from_powerwall_kwh: [], home_minus_solar_kwh: []};
+
+            const ctx = document.getElementById('unifiedChart').getContext('2d');
+            unifiedChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: initialData.labels,
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Yearly Day Range Comparison'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date (M/D)'
+                            }
+                        },
+                        y1: {
+                            grid: {
+                                lineWidth: function(context) {
+                                    return (context.tick.value == 0) ? 4 : 1;
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Energy (kWh)'
+                            },
+                            display: 'auto',
+                            position: 'left',
+                            min: 0,
+                        },
+                        y2: {
+                            title: {
+                                display: true,
+                                text: 'Day Length (hours)'
+                            },
+                            display: 'auto',
+                            position: 'right',
+                            min: 0,
+                            max: 24
+                        },
+                    }
+                }
+            });
+        }
+
+        function updateDateRangeFromControls() {
+            startMonth = parseInt(document.getElementById('startDateMonth').value);
+            startDay = parseInt(document.getElementById('startDateDay').value);
+            endMonth = parseInt(document.getElementById('endDateMonth').value);
+            endDay = parseInt(document.getElementById('endDateDay').value);
+            selectedYears = getSelectedYears();
+        }
+
+        function getChartDataForAggregation(allData, metricName, aggregationMode) {
+            if (aggregationMode === 'none') {
+                return allData[metricName];
+            }
+
+            let windowSize = 0;
+            let isMovingMax = false;
+
+            switch(aggregationMode) {
+                case '7day_avg':
+                    windowSize = 7;
+                    break;
+                case '15day_avg':
+                    windowSize = 15;
+                    break;
+                case '7day_max':
+                    windowSize = 7;
+                    isMovingMax = true;
+                    break;
+            }
+
+            if (windowSize === 0) {
+                return allData[metricName];
+            }
+
+            if (isMovingMax) {
+                return calculateMovingMaxForRange(allData[metricName], windowSize);
+            } else {
+                return calculateMovingAverageForRange(allData[metricName], windowSize);
+            }
+        }
+
+        function calculateMovingAverageForRange(data, windowSize) {
+            const result = [];
+            for (let i = 0; i < data.length; i++) {
+                let sum = 0;
+                let count = 0;
+                for (let j = 0; j < windowSize; j++) {
+                    const val = data[i - j];
+                    if (val !== null && val !== undefined) {
+                        sum += val;
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    result.push(sum / count);
+                } else {
+                    result.push(null);
+                }
+            }
+            return result;
+        }
+
+        function calculateMovingMaxForRange(data, windowSize) {
+            const result = [];
+            for (let i = 0; i < data.length; i++) {
+                let max = null;
+                for (let j = 0; j < windowSize; j++) {
+                    const val = data[i - j];
+                    if (val !== null && val !== undefined) {
+                        if (max === null || val > max) {
+                            max = val;
+                        }
+                    }
+                }
+                result.push(max);
+            }
+            return result;
+        }
+
+        async function collectAllDateStrings(selectedYears) {
+            // TODO: Drive in code as opposed to calling for Day Length
+            
+            const year = 2025; // Arbitrary Year...
+            let startDateStr = new Date(year, startMonth - 1, startDay).toISOString().split('T')[0];
+            let endDateStr = new Date(year, endMonth - 1, endDay).toISOString().split('T')[0];
+            
+            const dayLengthData = await fetchDayLengthData(startDateStr, endDateStr);
+            const allDateStrings  = dayLengthData.dateStrings.map(date => formatDateLabel(date));
+            
+            //const allDateStrings = Array.from(allDateStringsSet);
+            return allDateStrings;
+        }
+
+        function alignDataToDates(rawData, rawDateStrings, referenceDateStrings) {
+            const dataMap = {};
+            for (let i = 0; i < rawDateStrings.length; i++) {
+                dataMap[formatDateLabel(rawDateStrings[i])] = rawData[i];
+            }
+            
+            const alignedData = [];
+            for (const date of referenceDateStrings) {
+                alignedData.push(dataMap[date] !== undefined ? dataMap[date] : null);
+            }
+            
+            return alignedData;
+        }
+
+        const updateUnifiedChartWithData = async () => {
+            updateDateRangeFromControls();
+            const aggregationSelect = document.getElementById('aggregationSelect');
+            const aggregationOnlySelector = document.getElementById('aggregationOnlySelector');
+            const aggregationMode = aggregationSelect.value;
+            const isAggregationOnly = aggregationOnlySelector.checked;
+            
+            if (selectedYears.length === 0) {
+                alert('Please select at least one year');
+                return;
+            }
+
+            unifiedChart.data.datasets = [];
+
+            const allDateStrings = await collectAllDateStrings();
+            unifiedChart.data.labels = allDateStrings;
+
+            const allYearData = [];
+            
+            for (const year of selectedYears) {
+                let startDateStr = new Date(year, startMonth - 1, startDay).toISOString().split('T')[0];
+                let endDateStr = new Date(year, endMonth - 1, endDay).toISOString().split('T')[0];
+                
+                const dayLengthData = await fetchDayLengthData(startDateStr, endDateStr);
+                const solarStats = await fetchSolarStats(startDateStr, endDateStr);
+
+                const alignedDayLengths = alignDataToDates(dayLengthData.dayLengths, dayLengthData.dateStrings, allDateStrings);
+                const alignedSolarEnergy = alignDataToDates(solarStats.solar_energy_kwh, solarStats.dateStrings, allDateStrings);
+                const alignedHomeUsage = alignDataToDates(solarStats.home_kwh, solarStats.dateStrings, allDateStrings);
+                const alignedGridUsage = alignDataToDates(solarStats.from_grid_kwh, solarStats.dateStrings, allDateStrings);
+                const alignedGridExports = alignDataToDates(solarStats.to_grid_kwh, solarStats.dateStrings, allDateStrings);
+                const alignedPowerwallUsage = alignDataToDates(solarStats.from_powerwall_kwh, solarStats.dateStrings, allDateStrings);
+                const alignedUnderproduction = alignDataToDates(solarStats.home_minus_solar_kwh, solarStats.dateStrings, allDateStrings);
+
+                const yearData = {
+                    year: year,
+                    dayLengths: alignedDayLengths,
+                    solar_energy_kwh: alignedSolarEnergy,
+                    home_kwh: alignedHomeUsage,
+                    from_grid_kwh: alignedGridUsage,
+                    to_grid_kwh: alignedGridExports,
+                    from_powerwall_kwh: alignedPowerwallUsage,
+                    home_minus_solar_kwh: alignedUnderproduction,
+                    dateStrings: allDateStrings
+                };
+                
+                allYearData.push(yearData);
+            }
+
+            for (const yearData of allYearData) {
+                await addAllDatasetsForYear(yearData, aggregationMode, isAggregationOnly);
+            }
+
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const firstDate = allDateStrings[0];
+            const lastDate = allDateStrings[allDateStrings.length - 1];
+            const firstDateObj = new Date(firstDate);
+            const lastDateObj = new Date(lastDate);
+            
+            let titlePrefix = '';
+            if (selectedYears.length === 1) {
+                titlePrefix = `Yearly Comparison for ${selectedYears[0]}: `;
+            } else {
+                titlePrefix = 'Yearly Comparison: ';
+            }
+            
+            const startLabel = `${monthNames[firstDateObj.getMonth()]} ${firstDateObj.getDate()}`;
+            const endLabel = `${monthNames[lastDateObj.getMonth()]} ${lastDateObj.getDate()}`;
+            const yearsStr = selectedYears.join(', ');
+            unifiedChart.options.plugins.title.text = `${titlePrefix}${startLabel} - ${endLabel} (${yearsStr})`;
+
+            function getValidMinMax(dataArray) {
+                const validValues = dataArray.filter(v => v !== null && v !== undefined);
+                if (validValues.length === 0) return [null, null];
+                return [Math.min(...validValues), Math.max(...validValues)];
+            }
+
+            if (selectedYears.length === 1 && allYearData[0].dayLengths.length > 0) {
+                const [minDayLength, maxDayLength] = getValidMinMax(allYearData[0].dayLengths);
+                if (minDayLength !== null && maxDayLength !== null) {
+                    unifiedChart.options.scales.y2.min = Math.max(0, minDayLength - 0.5);
+                    unifiedChart.options.scales.y2.max = Math.min(24, maxDayLength + 0.5);
+                }
+            } else {
+                let runningMinDayLength = Number.MAX_SAFE_INTEGER;
+                let runningMaxDayLength = Number.MIN_SAFE_INTEGER;
+                for (const yearData of allYearData) {
+                    const [minVal, maxVal] = getValidMinMax(yearData.dayLengths);
+                    if (minVal !== null) runningMinDayLength = Math.min(runningMinDayLength, minVal);
+                    if (maxVal !== null) runningMaxDayLength = Math.max(runningMaxDayLength, maxVal);
+                }
+                if (runningMinDayLength !== Number.MAX_SAFE_INTEGER && runningMaxDayLength !== Number.MIN_SAFE_INTEGER) {
+                    unifiedChart.options.scales.y2.min = Math.max(0, runningMinDayLength - 0.5);
+                    unifiedChart.options.scales.y2.max = Math.min(24, runningMaxDayLength + 0.5);
+                }
+            }
+
+            if (unifiedChart.data.datasets.length > 0) {
+                const [minKWh, maxKWh] = computeMinAndMaxkWhDisplayRange(unifiedChart.data.datasets);
+                unifiedChart.options.scales.y1.max = maxKWh;
+                unifiedChart.options.scales.y1.min = minKWh;
+            }
+
+            unifiedChart.update();
+        };
+
+        const addAllDatasetsForYear = async (yearData, aggregationMode, isAggregationOnly) => {
+            const year = yearData.year;
+
+            maybeAddRawDataset(yearData.dayLengths, lineConfigs.dayLengths, year, yearData.dateStrings);
+            
+            if (!isAggregationOnly || aggregationMode === 'none') {
+                for (const [key, lineConfig] of Object.entries(lineConfigs)) {
+                    if (key === "dayLengths") {
+                        continue;
+                    }
+                    maybeAddRawDataset(yearData[key], lineConfig, year, yearData.dateStrings);
+                }
+            }
+
+            if (aggregationMode !== 'none') {
+                await addAggregationDatasetsForYear(yearData, aggregationMode);
+            }
+        };
+
+        const addAggregationDatasetsForYear = async (yearData, aggregationMode) => {
+            let windowSize = 0;
+            let isMovingMax = false;
+
+            switch(aggregationMode) {
+                case '7day_avg':
+                    windowSize = 7;
+                    break;
+                case '15day_avg':
+                    windowSize = 15;
+                    break;
+                case '7day_max':
+                    windowSize = 7;
+                    isMovingMax = true;
+                    break;
+            }
+
+            if (windowSize === 0) {
+                return;
+            }
+
+            const aggregationName = isMovingMax ? 'Moving Max' : 'Moving Average';
+
+            for (const [key, lineConfig] of Object.entries(lineConfigs)) {
+                if (key === "dayLengths") {
+                    continue;
+                }
+                const aggregatedData = getChartDataForAggregation(yearData, key, aggregationMode);
+                maybeAddAggregationDataset(aggregatedData, lineConfig, aggregationName, windowSize, yearData.year);
+            }
+        };
+
+        function onlyButtonClicked(targetCheckboxId) {
+            for (checkbox of document.getElementsByClassName("metricCheckbox")) {
+                checkbox.checked = false;
+            }
+
+            const targetCheckbox = document.getElementById(targetCheckboxId);
+            if (targetCheckbox) {
+                targetCheckbox.checked = true;
+            }
+
+            updateUnifiedChartWithData();
+        }
+
+        document.getElementById('updateChartBtn').addEventListener('click', updateUnifiedChartWithData);
+
+        const metricCheckboxes = document.getElementsByClassName("metricCheckbox");
+        const metricControls = document.getElementsByClassName("metricControl");
+        for (const checkbox of [...metricCheckboxes, ...metricControls]) {
+            checkbox.addEventListener("change", updateUnifiedChartWithData);
+        }
+
+        createUnifiedChart();
+        
+        updateUnifiedChartWithData();
+    </script>
+</body>
+</html>
