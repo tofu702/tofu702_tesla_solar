@@ -5,6 +5,54 @@
       "last_modified": "2025-11-17T10:23:24Z",
       "resolved": "github:NixOS/nixpkgs/8b6600824693a9c706ef09bd86711ca393703466?lastModified=1763375004&narHash=sha256-e81Xfa7xhRZfqGB4s3xEvrg4p1v%2BfToM6CIQlXUyaX0%3D"
     },
+    "opencode@latest": {
+      "last_modified": "2026-03-11T04:01:32Z",
+      "resolved": "github:NixOS/nixpkgs/b6067cc0127d4db9c26c79e4de0513e58d0c40c9#opencode",
+      "source": "devbox-search",
+      "version": "1.2.24",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/8vrm23dj2i18q07gvxxq7q7w86q0bp36-opencode-1.2.24",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/8vrm23dj2i18q07gvxxq7q7w86q0bp36-opencode-1.2.24"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/bzm522l0y9icqazknyv4hxjikff99q66-opencode-1.2.24",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/bzm522l0y9icqazknyv4hxjikff99q66-opencode-1.2.24"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/32m1iglq1nirpkqaj4kk9liwqjksnq4x-opencode-1.2.24",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/32m1iglq1nirpkqaj4kk9liwqjksnq4x-opencode-1.2.24"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/b226k9xhjxrk86zyvlnp8v3s799a99p9-opencode-1.2.24",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/b226k9xhjxrk86zyvlnp8v3s799a99p9-opencode-1.2.24"
+        }
+      }
+    },
     "python@3.14.0": {
       "last_modified": "2025-11-15T07:28:48Z",
       "plugin_version": "0.0.4",
