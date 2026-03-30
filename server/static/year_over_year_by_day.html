@@ -177,7 +177,7 @@
                     <label>Years:</label>
                     <div class="year-checkbox-container" id="yearCheckboxes">
                         <div class="year-checkbox-item">
-                            <input type="checkbox" id="year2024" class="metricControl" value="2024">
+                            <input type="checkbox" id="year2024" class="metricControl" value="2024" checked>
                             <label for="year2024" style="margin: 0;">2024</label>
                         </div>
                         <div class="year-checkbox-item">
@@ -232,27 +232,27 @@
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showSolarData'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showHomeUsage" class="metricCheckbox" checked>
+                    <input type="checkbox" id="showHomeUsage" class="metricCheckbox">
                     Show Home Usage
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showHomeUsage'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showGridUsage" class="metricCheckbox" checked>
+                    <input type="checkbox" id="showGridUsage" class="metricCheckbox">
                     Show Grid Usage
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showGridUsage'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showGridExports" class="metricCheckbox" checked>
+                    <input type="checkbox" id="showGridExports" class="metricCheckbox">
                     Show Grid Exports
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showGridExports'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showPowerwallUsage" class="metricCheckbox" checked>
+                    <input type="checkbox" id="showPowerwallUsage" class="metricCheckbox">
                     Show Powerwall Usage
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showPowerwallUsage'); return false;">[Only]</a>
                 </label>
                 <label>
-                    <input type="checkbox" id="showUnderproduction" class="metricCheckbox" checked>
+                    <input type="checkbox" id="showUnderproduction" class="metricCheckbox">
                     Show Underproduction (Home - Solar)
                     <a href="#" class="only-link" onclick="onlyButtonClicked('showUnderproduction'); return false;">[Only]</a>
                 </label>
@@ -334,6 +334,28 @@
             return date.toISOString().split('T')[0];
         }
 
+        function getCurrentAggregationWindowSize() {
+            const aggregationMode = document.getElementById('aggregationSelect').value;
+            switch(aggregationMode) {
+                case '7day_avg':
+                    return 7;
+                case '15day_avg':
+                    return 15;
+                case '7day_max':
+                    return 7;
+            }
+            return 0;
+        }
+
+        function isCurrentAggregationMovingMax() {
+            const aggregationMode = document.getElementById('aggregationSelect').value;
+
+            if (aggregationMode == "7day_max") {
+                return true;
+            }
+            return false;
+        }
+
         function formatDateLabel(dateString) {
             const parts = dateString.split('-');
             const month = parseInt(parts[1]);
@@ -341,9 +363,13 @@
             return `${month}/${day}`;
         }
 
-        const fetchDayLengthData = async (startDate, endDate) => {
+        function dateToDateStr(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        const fetchDayLengthData = async (startDateStr, endDateStr) => {
             try {
-                const response = await fetch(`/sun/range?start_date=${startDate}&end_date=${endDate}`);
+                const response = await fetch(`/sun/range?start_date=${startDateStr}&end_date=${endDateStr}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -368,9 +394,9 @@
             }
         };
 
-        const fetchSolarStats = async (startDate, endDate) => {
+        const fetchSolarStats = async (startDateStr, endDateStr) => {
             try {
-                const response = await fetch(`/day_data/range?start_date=${startDate}&end_date=${endDate}`);
+                const response = await fetch(`/day_data/range?start_date=${startDateStr}&end_date=${endDateStr}`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -403,6 +429,34 @@
             }
         };
 
+        const fetchAlignedStatsForYear = async (year, startMonth, startDay, endMonth, endDay, allDateStrings) => {
+            let startDateStr = dateToDateStr(new Date(year, startMonth - 1, startDay));
+            let endDateStr = dateToDateStr(new Date(year, endMonth - 1, endDay));
+
+            const dayLengthData = await fetchDayLengthData(startDateStr, endDateStr);
+            const solarStats = await fetchSolarStats(startDateStr, endDateStr);
+
+            const alignedDayLengths = alignDataToDates(dayLengthData.dayLengths, dayLengthData.dateStrings, allDateStrings);
+            const alignedSolarEnergy = alignDataToDates(solarStats.solar_energy_kwh, solarStats.dateStrings, allDateStrings);
+            const alignedHomeUsage = alignDataToDates(solarStats.home_kwh, solarStats.dateStrings, allDateStrings);
+            const alignedGridUsage = alignDataToDates(solarStats.from_grid_kwh, solarStats.dateStrings, allDateStrings);
+            const alignedGridExports = alignDataToDates(solarStats.to_grid_kwh, solarStats.dateStrings, allDateStrings);
+            const alignedPowerwallUsage = alignDataToDates(solarStats.from_powerwall_kwh, solarStats.dateStrings, allDateStrings);
+            const alignedUnderproduction = alignDataToDates(solarStats.home_minus_solar_kwh, solarStats.dateStrings, allDateStrings);
+
+            return {
+                year: year,
+                dayLengths: alignedDayLengths,
+                solar_energy_kwh: alignedSolarEnergy,
+                home_kwh: alignedHomeUsage,
+                from_grid_kwh: alignedGridUsage,
+                to_grid_kwh: alignedGridExports,
+                from_powerwall_kwh: alignedPowerwallUsage,
+                home_minus_solar_kwh: alignedUnderproduction,
+                dateStrings: allDateStrings
+            };
+        }
+
         function createDatasetGeneric(data, lineConfig, label, borderColor, borderDash) {
             const yAxisID = lineConfig.yAxisID ?? "y1";
             borderColorText = disableStableColors ? null : `rgb(${borderColor})`;
@@ -410,6 +464,7 @@
             return {
                 label: label,
                 data: data,
+                pointStyle: false,
                 borderColor: borderColorText,
                 backgroundColor: backgroundColorText,
                 borderWidth: 2,
@@ -438,7 +493,7 @@
 
         function maybeAddAggregationDataset(data, lineConfig, aggregationName, aggregationDays, year) {
             const label = `${lineConfig.name} - ${year} - ${aggregationName} ${aggregationDays} Days`;
-            maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB, [5,5]);
+            maybeAddDatasetGeneric(data, lineConfig, label, lineConfig.borderColorRGB);
         }
 
         function computeMinAndMaxkWhDisplayRange(datasets) {
@@ -534,36 +589,21 @@
             selectedYears = getSelectedYears();
         }
 
-        function getChartDataForAggregation(allData, metricName, aggregationMode) {
-            if (aggregationMode === 'none') {
-                return allData[metricName];
-            }
+        function computeChartDataForAggregation(alignedMetricDataIncludingWindow) {
 
-            let windowSize = 0;
-            let isMovingMax = false;
+            const windowSize = getCurrentAggregationWindowSize();
+            const isMovingMax = isCurrentAggregationMovingMax();
 
-            switch(aggregationMode) {
-                case '7day_avg':
-                    windowSize = 7;
-                    break;
-                case '15day_avg':
-                    windowSize = 15;
-                    break;
-                case '7day_max':
-                    windowSize = 7;
-                    isMovingMax = true;
-                    break;
-            }
-
-            if (windowSize === 0) {
-                return allData[metricName];
-            }
+            let aggregationWithLeadingWindow = [];
 
             if (isMovingMax) {
-                return calculateMovingMaxForRange(allData[metricName], windowSize);
+                aggregationWithLeadingWindow = calculateMovingMaxForRange(alignedMetricDataIncludingWindow, windowSize);
             } else {
-                return calculateMovingAverageForRange(allData[metricName], windowSize);
+                aggregationWithLeadingWindow = calculateMovingAverageForRange(alignedMetricDataIncludingWindow, windowSize);
             }
+
+            // Remove the leading window
+            return aggregationWithLeadingWindow.slice(-1 * (aggregationWithLeadingWindow.length - windowSize));
         }
 
         function calculateMovingAverageForRange(data, windowSize) {
@@ -571,6 +611,7 @@
             for (let i = 0; i < data.length; i++) {
                 let sum = 0;
                 let count = 0;
+
                 for (let j = 0; j < windowSize; j++) {
                     const val = data[i - j];
                     if (val !== null && val !== undefined) {
@@ -578,11 +619,8 @@
                         count++;
                     }
                 }
-                if (count > 0) {
-                    result.push(sum / count);
-                } else {
-                    result.push(null);
-                }
+
+                result.push(count == windowSize ? sum / count : null);
             }
             return result;
         }
@@ -591,30 +629,39 @@
             const result = [];
             for (let i = 0; i < data.length; i++) {
                 let max = null;
+                let good_point_count = 0;
+
                 for (let j = 0; j < windowSize; j++) {
                     const val = data[i - j];
                     if (val !== null && val !== undefined) {
                         if (max === null || val > max) {
                             max = val;
-                        }
+                        } 
+                        good_point_count++;
                     }
                 }
-                result.push(max);
+                result.push(good_point_count == windowSize ? max : null);
             }
             return result;
         }
 
-        async function collectAllDateStrings(selectedYears) {
-            // TODO: Drive in code as opposed to calling for Day Length
-            
+        async function collectAllDateStrings(selectedYears) {            
             const year = 2025; // Arbitrary Year...
-            let startDateStr = new Date(year, startMonth - 1, startDay).toISOString().split('T')[0];
-            let endDateStr = new Date(year, endMonth - 1, endDay).toISOString().split('T')[0];
-            
+
+            let startDate = new Date(year, startMonth-1, startDay);
+            let endDate = new Date(year, endMonth-1, endDay);
+            return await collectDateStringsForRange(startDate, endDate);
+        }
+
+        async function collectDateStringsForRange(startDate, endDate) {
+            // TODO: Drive in code as opposed to calling for Day Length
+
+            let startDateStr = startDate.toISOString().split('T')[0];
+            let endDateStr = endDate.toISOString().split('T')[0];
+
             const dayLengthData = await fetchDayLengthData(startDateStr, endDateStr);
             const allDateStrings  = dayLengthData.dateStrings.map(date => formatDateLabel(date));
             
-            //const allDateStrings = Array.from(allDateStringsSet);
             return allDateStrings;
         }
 
@@ -649,40 +696,8 @@
             const allDateStrings = await collectAllDateStrings();
             unifiedChart.data.labels = allDateStrings;
 
-            const allYearData = [];
-            
-            for (const year of selectedYears) {
-                let startDateStr = new Date(year, startMonth - 1, startDay).toISOString().split('T')[0];
-                let endDateStr = new Date(year, endMonth - 1, endDay).toISOString().split('T')[0];
-                
-                const dayLengthData = await fetchDayLengthData(startDateStr, endDateStr);
-                const solarStats = await fetchSolarStats(startDateStr, endDateStr);
-
-                const alignedDayLengths = alignDataToDates(dayLengthData.dayLengths, dayLengthData.dateStrings, allDateStrings);
-                const alignedSolarEnergy = alignDataToDates(solarStats.solar_energy_kwh, solarStats.dateStrings, allDateStrings);
-                const alignedHomeUsage = alignDataToDates(solarStats.home_kwh, solarStats.dateStrings, allDateStrings);
-                const alignedGridUsage = alignDataToDates(solarStats.from_grid_kwh, solarStats.dateStrings, allDateStrings);
-                const alignedGridExports = alignDataToDates(solarStats.to_grid_kwh, solarStats.dateStrings, allDateStrings);
-                const alignedPowerwallUsage = alignDataToDates(solarStats.from_powerwall_kwh, solarStats.dateStrings, allDateStrings);
-                const alignedUnderproduction = alignDataToDates(solarStats.home_minus_solar_kwh, solarStats.dateStrings, allDateStrings);
-
-                const yearData = {
-                    year: year,
-                    dayLengths: alignedDayLengths,
-                    solar_energy_kwh: alignedSolarEnergy,
-                    home_kwh: alignedHomeUsage,
-                    from_grid_kwh: alignedGridUsage,
-                    to_grid_kwh: alignedGridExports,
-                    from_powerwall_kwh: alignedPowerwallUsage,
-                    home_minus_solar_kwh: alignedUnderproduction,
-                    dateStrings: allDateStrings
-                };
-                
-                allYearData.push(yearData);
-            }
-
-            for (const yearData of allYearData) {
-                await addAllDatasetsForYear(yearData, aggregationMode, isAggregationOnly);
+             for (const year of selectedYears) {
+                await addAllDatasetsForYear(year, startMonth, startDay, endMonth, endDay, allDateStrings, aggregationMode, isAggregationOnly);
             }
 
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -710,6 +725,16 @@
                 if (validValues.length === 0) return [null, null];
                 return [Math.min(...validValues), Math.max(...validValues)];
             }
+
+
+            // TODO: Clean Up
+            const allYearData = [];
+            
+            for (const year of selectedYears) {
+                yearData = await fetchAlignedStatsForYear(year, startMonth, startDay, endMonth, endDay, allDateStrings);
+                allYearData.push(yearData);
+            }
+
 
             if (selectedYears.length === 1 && allYearData[0].dayLengths.length > 0) {
                 const [minDayLength, maxDayLength] = getValidMinMax(allYearData[0].dayLengths);
@@ -740,8 +765,8 @@
             unifiedChart.update();
         };
 
-        const addAllDatasetsForYear = async (yearData, aggregationMode, isAggregationOnly) => {
-            const year = yearData.year;
+        const addAllDatasetsForYear = async (year, startMonth, startDay, endMonth, endDay, allDateStrings, aggregationMode, isAggregationOnly) => {
+            yearData = await fetchAlignedStatsForYear(year, startMonth, startDay, endMonth, endDay, allDateStrings)
 
             maybeAddRawDataset(yearData.dayLengths, lineConfigs.dayLengths, year, yearData.dateStrings);
             
@@ -755,39 +780,43 @@
             }
 
             if (aggregationMode !== 'none') {
-                await addAggregationDatasetsForYear(yearData, aggregationMode);
+                await addAggregationDatasetsForYear(year, startMonth, startDay, endMonth, endDay);
             }
         };
 
-        const addAggregationDatasetsForYear = async (yearData, aggregationMode) => {
-            let windowSize = 0;
-            let isMovingMax = false;
-
-            switch(aggregationMode) {
-                case '7day_avg':
-                    windowSize = 7;
-                    break;
-                case '15day_avg':
-                    windowSize = 15;
-                    break;
-                case '7day_max':
-                    windowSize = 7;
-                    isMovingMax = true;
-                    break;
-            }
+        const addAggregationDatasetsForYear = async (year, startMonth, startDay, endMonth, endDay) => {
+            const windowSize = getCurrentAggregationWindowSize();
+            const isMovingMax = isCurrentAggregationMovingMax();
 
             if (windowSize === 0) {
                 return;
             }
 
+            let startDate = new Date(year, startMonth-1, startDay);
+            let endDate = new Date(year, endMonth-1, endDay);
+
+            const windowStartDate = new Date(startDate);
+            windowStartDate.setDate(startDate.getDate() - windowSize);
+
+            let windowStartDateStr = dateToDateStr(windowStartDate);
+            let endDateStr = dateToDateStr(endDate);
+
+            const rangeDataIncludingWindow = await fetchSolarStats(windowStartDateStr, endDateStr);
+            const dateStringsIncludingWindow = await collectDateStringsForRange(windowStartDate, endDate);
+
             const aggregationName = isMovingMax ? 'Moving Max' : 'Moving Average';
 
             for (const [key, lineConfig] of Object.entries(lineConfigs)) {
-                if (key === "dayLengths") {
+                if (key == 'dayLengths') {
                     continue;
                 }
-                const aggregatedData = getChartDataForAggregation(yearData, key, aggregationMode);
-                maybeAddAggregationDataset(aggregatedData, lineConfig, aggregationName, windowSize, yearData.year);
+
+                const alignedMetricDataIncludingWindow = alignDataToDates(rangeDataIncludingWindow[key],
+                                                                          rangeDataIncludingWindow.dateStrings,
+                                                                          dateStringsIncludingWindow);
+
+                const aggregatedData = computeChartDataForAggregation(alignedMetricDataIncludingWindow);
+                maybeAddAggregationDataset(aggregatedData, lineConfig, aggregationName, windowSize, year);
             }
         };
 
