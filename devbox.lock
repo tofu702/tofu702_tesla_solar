@@ -6,50 +6,40 @@
       "resolved": "github:NixOS/nixpkgs/8b6600824693a9c706ef09bd86711ca393703466?lastModified=1763375004&narHash=sha256-e81Xfa7xhRZfqGB4s3xEvrg4p1v%2BfToM6CIQlXUyaX0%3D"
     },
     "opencode@latest": {
-      "last_modified": "2026-03-21T07:29:51Z",
-      "resolved": "github:NixOS/nixpkgs/09061f748ee21f68a089cd5d91ec1859cd93d0be#opencode",
+      "last_modified": "2026-04-07T01:34:01Z",
+      "resolved": "github:NixOS/nixpkgs/dc72a9d2282085d97d5a2cc8e7103a68ed4de188#opencode",
       "source": "devbox-search",
-      "version": "1.2.27",
+      "version": "1.3.13",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/py2b28274xmcx4f5a0mw7vii5qd5x09w-opencode-1.2.27",
+              "path": "/nix/store/a0m1g2cyfyns0k2x14fijzbdjlhdmsav-opencode-1.3.13",
               "default": true
             }
           ],
-          "store_path": "/nix/store/py2b28274xmcx4f5a0mw7vii5qd5x09w-opencode-1.2.27"
+          "store_path": "/nix/store/a0m1g2cyfyns0k2x14fijzbdjlhdmsav-opencode-1.3.13"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8212v9502khlb399pa9ipq91iv859bqz-opencode-1.2.27",
+              "path": "/nix/store/1mkrxcw376jpvp1i59s8zaga5p8pajq1-opencode-1.3.13",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8212v9502khlb399pa9ipq91iv859bqz-opencode-1.2.27"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/vfpqsyivxrhzq269nhlzydxs11fzj6d9-opencode-1.2.27",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/vfpqsyivxrhzq269nhlzydxs11fzj6d9-opencode-1.2.27"
+          "store_path": "/nix/store/1mkrxcw376jpvp1i59s8zaga5p8pajq1-opencode-1.3.13"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0hr7kzmn5m4j4vgv5vnialjvvv99dl6g-opencode-1.2.27",
+              "path": "/nix/store/d4pg0m8xbr9pwvdw14r5xj5p04wjbjyf-opencode-1.3.13",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0hr7kzmn5m4j4vgv5vnialjvvv99dl6g-opencode-1.2.27"
+          "store_path": "/nix/store/d4pg0m8xbr9pwvdw14r5xj5p04wjbjyf-opencode-1.3.13"
         }
       }
     },
