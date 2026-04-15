@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+        }
+        .main-content {
+            flex: 1;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .control-group {
+            margin: 10px;
+            display: inline-block;
+            vertical-align: top;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, button, input[type="number"] {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-top: 20px;
+        }
+        .sidebar {
+            width: 250px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            height: fit-content;
+        }
+        .sidebar-section {
+            margin-bottom: 20px;
+        }
+        .sidebar-section h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .checkbox-container, .radio-container {
+            margin: 10px 0;
+        }
+        .checkbox-container label, .radio-container label {
+            display: block;
+            margin: 8px 0;
+            font-weight: normal;
+        }
+        .date-range-inputs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .date-part-input {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <h1>Battery Simulator</h1>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Date Range:</label>
+                    <div class="date-range-inputs" id="dateRangeInputs">
+                        <div class="date-part-input">
+                            <label for="startDateYear">Start Year</label>
+                            <select id="startDateYear" class="metricControl">
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                        <div class="date-part-input">
+                            <label for="startDateMonth">Start Month</label>
+                            <select id="startDateMonth" class="metricControl">
+                                <option value="1" selected>January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="date-part-input">
+                            <label for="startDateDay">Day</label>
+                            <input type="number" id="startDateDay" class="metricControl" min="1" max="31" value="1">
+                        </div>
+                        <span style="font-weight: bold;">to</span>
+                        <div class="date-part-input">
+                            <label for="endDateYear">End Year</label>
+                            <select id="endDateYear" class="metricControl">
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                        <div class="date-part-input">
+                            <label for="endDateMonth">End Month</label>
+                            <select id="endDateMonth" class="metricControl">
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12" selected>December</option>
+                            </select>
+                        </div>
+                        <div class="date-part-input">
+                            <label for="endDateDay">Day</label>
+                            <input type="number" id="endDateDay" class="metricControl" min="1" max="31" value="31">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="aggregationSelect">Aggregation Mode:</label>
+                    <select id="aggregationSelect" class="metricControl">
+                        <option value="none">None</option>
+                        <option value="7day_avg">7 Day Moving Average</option>
+                        <option value="15day_avg">15 Day Moving Average</option>
+                        <option value="7day_max">7 Day Moving Max</option>
+                    </select>
+                    <br/>
+                    <br/>
+                    <label>
+                        <input type="checkbox" id="aggregationOnlySelector" class="metricControl">
+                        Only Show Aggregates
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <br>
+                    <button id="updateChartBtn">Update Chart</button>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="unifiedChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>Powerwalls</h3>
+                <div class="checkbox-container">
+                    <label><input type="checkbox" class="batteryControl" value="0"> 0 Powerwalls</label>
+                    <label><input type="checkbox" class="batteryControl" value="13.5" checked> 1 Powerwall</label>
+                    <label><input type="checkbox" class="batteryControl" value="27.0"> 2 Powerwalls</label>
+                    <label><input type="checkbox" class="batteryControl" value="40.5"> 3 Powerwalls</label>
+                    <label><input type="checkbox" class="batteryControl" value="54.0"> 4 Powerwalls</label>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h3>Metric</h3>
+                <div class="radio-container">
+                    <label><input type="radio" name="metric" class="metricRadio" value="home_kwh"> Home Usage</label>
+                    <label><input type="radio" name="metric" class="metricRadio" value="solar_energy_kwh"> Solar Data</label>
+                    <label><input type="radio" name="metric" class="metricRadio" value="eod_battery_kwh"> End of Day Battery</label>
+                    <label><input type="radio" name="metric" class="metricRadio" value="battery_usage_kwh"> Battery Usage</label>
+                    <label><input type="radio" name="metric" class="metricRadio" value="from_grid_kwh" checked> Grid Usage</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const metricConfigs = {
+            home_kwh: { name: "Home Usage", unitText: "kWh" },
+            solar_energy_kwh: { name: "Solar Data", unitText: "kWh" },
+            eod_battery_kwh: { name: "End of Day Battery", unitText: "kWh" },
+            battery_usage_kwh: { name: "Battery Usage", unitText: "kWh" },
+            from_grid_kwh: { name: "Grid Usage", unitText: "kWh" }
+        };
+
+        let unifiedChart = null;
+
+        function createUnifiedChart() {
+            const ctx = document.getElementById('unifiedChart').getContext('2d');
+            unifiedChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Battery Simulation' },
+                        legend: { display: true, position: 'top' }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Date (M/D)' } },
+                        y: { 
+                            title: { display: true, text: 'Energy (kWh)' },
+                            min: 0,
+                            display: 'auto'
+                        }
+                    }
+                }
+            });
+        }
+
+        const formatDateLabel = (dateString) => {
+            const parts = dateString.split('-');
+            return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+        };
+
+        const fetchBatteryData = async (startDate, endDate, capacity) => {
+            const response = await fetch(`/battery_simulator/day_range?start_date=${startDate}&end_date=${endDate}&simulated_battery_capacity_kwh=${capacity}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            return data.days_to_simulated_result;
+        };
+
+        const updateChart = async () => {
+            const startYear = parseInt(document.getElementById('startDateYear').value);
+            const startMonth = parseInt(document.getElementById('startDateMonth').value);
+            const startDay = parseInt(document.getElementById('startDateDay').value);
+            const endYear = parseInt(document.getElementById('endDateYear').value);
+            const endMonth = parseInt(document.getElementById('endDateMonth').value);
+            const endDay = parseInt(document.getElementById('endDateDay').value);
+            const aggregationMode = document.getElementById('aggregationSelect').value;
+            const isAggregationOnly = document.getElementById('aggregationOnlySelector').checked;
+            
+            const selectedBatteries = Array.from(document.querySelectorAll('.batteryControl:checked')).map(cb => parseFloat(cb.value));
+            const selectedMetric = document.querySelector('.metricRadio:checked').value;
+            const metricConfig = metricConfigs[selectedMetric];
+
+            if (selectedBatteries.length === 0) {
+                alert('Please select at least one Powerwall option');
+                return;
+            }
+
+            // Calculate date range
+            const startDate = new Date(startYear, startMonth - 1, startDay);
+            const endDate = new Date(endYear, endMonth - 1, endDay);
+            const startDateStr = startDate.toISOString().split('T')[0];
+            const endDateStr = endDate.toISOString().split('T')[0];
+
+            unifiedChart.data.datasets = [];
+            
+            // We need a common set of labels. We'll use the first battery's dates.
+            let commonLabels = [];
+            let commonDates = [];
+
+            try {
+                const results = await Promise.all(selectedBatteries.map(cap => fetchBatteryData(startDateStr, endDateStr, cap)));
+                
+                // Use the first result to establish labels and dates
+                const firstResult = results[0];
+                commonDates = Object.keys(firstResult).sort();
+                commonLabels = commonDates.map(formatDateLabel);
+                unifiedChart.data.labels = commonLabels;
+
+                for (let i = 0; i < results.length; i++) {
+                    const result = results[i];
+                    const capacity = selectedBatteries[i];
+                    const labelBase = `${metricConfig.name} (${capacity} kWh)`;
+
+                    const rawData = commonDates.map(date => result[date] ? result[date][selectedMetric] : null);
+
+                    if (aggregationMode !== 'none') {
+                        // 1. Calculate Aggregated Data
+                        const windowSize = aggregationMode === '7day_avg' || aggregationMode === '7day_max' ? 7 : 15;
+                        const isMovingMax = aggregationMode === '7day_max';
+                        const aggregatedData = [];
+                        for (let j = 0; j < rawData.length; j++) {
+                            if (j < windowSize - 1) {
+                                aggregatedData.push(null);
+                                continue;
+                            }
+                            
+                            let val;
+                            if (isMovingMax) {
+                                val = Math.max(...rawData.slice(j - windowSize + 1, j + 1).filter(v => v !== null));
+                            } else {
+                                const window = rawData.slice(j - windowSize + 1, j + 1).filter(v => v !== null);
+                                val = window.length === windowSize ? window.reduce((a, b) => a + b, 0) / windowSize : null;
+                            }
+                            aggregatedData.push(val);
+                        }
+
+                        // 2. Push Aggregated Data
+                        unifiedChart.data.datasets.push({
+                            label: `${labelBase} (Aggregated)`,
+                            data: aggregatedData,
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        });
+                    }
+
+                    if (!isAggregationOnly || aggregationMode == "none") {
+                        // No aggregation mode selected
+                        unifiedChart.data.datasets.push({
+                            label: labelBase,
+                            data: rawData,
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        });
+                    }
+                }
+
+                // Update title
+                unifiedChart.options.plugins.title.text = `${metricConfig.name} Simulation (${startDateStr} to ${endDateStr})`;
+
+                // Adjust Y axis
+                if (unifiedChart.data.datasets.length > 0) {
+                    const allValues = unifiedChart.data.datasets.flatMap(ds => ds.data.filter(v => v !== null));
+                    if (allValues.length > 0) {
+                        const maxVal = Math.max(...allValues);
+                        unifiedChart.options.scales.y.max = Math.ceil(maxVal * 1.1 / 5) * 5;
+                    }
+                }
+
+                unifiedChart.update();
+
+            } catch (error) {
+                console.error('Error updating chart:', error);
+                alert('Error fetching data. Check console for details.');
+            }
+        };
+
+        document.getElementById('updateChartBtn').addEventListener('click', updateChart);
+        document.getElementById('aggregationSelect').addEventListener('change', updateChart);
+        document.querySelectorAll('.metricControl').forEach(el => el.addEventListener('change', updateChart));
+        document.querySelectorAll('.batteryControl').forEach(el => el.addEventListener('change', updateChart));
+        document.querySelectorAll('.metricRadio').forEach(el => el.addEventListener('change', updateChart));
+
+        createUnifiedChart();
+        updateChart();
+    </script>
+</body>
+</html>
