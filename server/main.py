@@ -10,7 +10,7 @@ import server.lib.sun_data
 import server.lib.tesla_monthly_data_parser
 
 
-TESLA_DATA_DIR_PATH = "/Volumes/github/tofu702_tesla_solar/example_data/"
+TESLA_DATA_DIR_PATH = "/Users/steven/github/tofu702_tesla_solar/example_data/"
 
 # Create FastAPI instance
 app = FastAPI(
