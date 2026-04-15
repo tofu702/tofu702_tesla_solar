@@ -81,12 +81,29 @@ Show these in a separate table
 * Design this is such a way that it could be added to the existing `main.html` in the future, but keep it separate for now.
 
 # Step 10: Create a yearly day range view
-Create new `static/yearly_day_range.html`. This file should be based on `static/day_data_unified.html` but has several key distinctions
+Create new `static/year_over_year_by_day.html`. This file should be based on `static/day_data_unified.html` but has several key distinctions
 * It takes arbitrary start (month, day) and end (month, day) tuples
 * It has check boxes for the years to show
-
 
 ## More Details
 * Default to a full calendar year range (Jan 1 through Dec 31 inclusive)
 * All years that are checked should be shown the graph.
 * Use similar aggregation controls to `day_data_unified.html` including the "Only Show Aggregates" checkbox
+
+# Step 11: Battery Simulator By Day
+Create a new "Battery Simulator" page that simulates the behavior of the system with a user selected number of Powerwall batteries.
+
+## Notes
+* For the server API, see `ai_docs/openapi.json` and look for `/battery_simulator/day_range`
+* The overall structure of this page should be like `server/static/year_over_year_by_day.html`
+* The user should be able to click checkboxes to compare several powerwall options. Options for 0, 1, 2, 3 or 4 powerwalls should be displayed. Each Powerwall has a simulated_battery_capacity of 13.5 kWh, so 2 Powerwalls for example would have a 27 kWh total capacity.
+* Each checked powerwall box will require a different call to the battery simulator API.
+* Users should only be able to select a single metric to compare (radio buttons, not check boxes)
+* Same aggregation controls as `server/static/year_over_year_by_day.html`
+
+# Metric for the user to select
+* "Home Usage": `home_kwh`
+* "Solar Data": `solar_energy_kwh`
+* "End of Day Battery": `eod_battery_kwh`
+* "Battery Usage": `battery_usage_kwh`
+* "Grid Usage": `from_grid_kwh` (checked)
