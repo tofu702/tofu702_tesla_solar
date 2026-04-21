@@ -107,3 +107,14 @@ Create a new "Battery Simulator" page that simulates the behavior of the system 
 * "End of Day Battery": `eod_battery_kwh`
 * "Battery Usage": `battery_usage_kwh`
 * "Grid Usage": `from_grid_kwh` (checked)
+
+# Step 12: Top Navigation
+* Add a unified tab bar to navigate between the main pages. Every page in the group should have the same nav:
+  * `all_time.html`
+  * `battery_simulator.html`
+  * `day_data_unified.html`
+  * `monthly_comparison.html`
+  * `year_over_year_by_day.html.`
+* Get the page names from `main.html`, but don't add the top nav to `main.html`
+* Try to factor this code out so that we don't have to modify the pages individually
+* Make this approach modular enough to support additional pages
