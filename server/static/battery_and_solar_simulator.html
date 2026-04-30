@@ -272,7 +272,7 @@
         };
 
         const fetchBatteryData = async (startDate, endDate, capacity) => {
-            const response = await fetch(`/battery_simulator/day_range?start_date=${startDate}&end_date=${endDate}&simulated_battery_capacity_kwh=${capacity}`);
+            const response = await fetch(`/battery_and_solar_simulator/day_range?start_date=${startDate}&end_date=${endDate}&simulated_battery_capacity_kwh=${capacity}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
             return data.days_to_simulated_result;

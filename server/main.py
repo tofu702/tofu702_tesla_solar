@@ -5,7 +5,7 @@ import fastapi.staticfiles
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
-import server.lib.battery_simulator
+import server.lib.battery_and_solar_simulator
 import server.lib.sun_data
 import server.lib.tesla_monthly_data_parser
 
@@ -26,7 +26,7 @@ class DayDataForRangeResponse(pydantic.BaseModel):
     days_to_data: dict[str, server.lib.tesla_monthly_data_parser.DailyData]
 
 class DailyBatterySimulatorResponse(pydantic.BaseModel):
-    days_to_simulated_result: dict[str, server.lib.battery_simulator.DailyBatterySimResult]
+    days_to_simulated_result: dict[str, server.lib.battery_and_solar_simulator.DailyBatteryAndSolarSimResult]
 
 # Root endpoint
 @app.get("/")
@@ -82,7 +82,7 @@ async def day_data_for_range(start_date: str, end_date: str) -> DayDataForRangeR
     days_to_data = dict([(x.date.strftime(format), x) for x in all_day_data])
     return DayDataForRangeResponse(days_to_data=days_to_data)
 
-@app.get("/battery_simulator/day_range")
+@app.get("/battery_and_solar_simulator/day_range")
 async def simulate_battery_for_range(start_date: datetime.date,
                                      end_date: datetime.date,
                                      simulated_battery_capacity_kwh: float,
@@ -93,15 +93,15 @@ async def simulate_battery_for_range(start_date: datetime.date,
     if num_days < 0:
         raise ValueError("end_date: %s < start_date: %s" % (end_date, start_date))
     parser = server.lib.tesla_monthly_data_parser.TeslaDataParser(TESLA_DATA_DIR_PATH)
-    battery_simulator = server.lib.battery_simulator.BatterySimulator()
+    battery_and_solar_simulator = server.lib.battery_and_solar_simulator.BatteryAndSolarSimulator()
     all_day_solar_data = parser.data_for_date_range(start_date, end_date)
-    battery_sim_data = battery_simulator.simulate_day_range(solar_data_for_days=all_day_solar_data,
+    battery_sim_data = battery_and_solar_simulator.simulate_day_range(solar_data_for_days=all_day_solar_data,
                                                             simulated_battery_capacity_kwh=simulated_battery_capacity_kwh,
                                                             solar_multiplier=solar_multiplier)
     days_to_sim_results = dict([(x.date.strftime(format), x) for x in battery_sim_data])
     return DailyBatterySimulatorResponse(days_to_simulated_result=days_to_sim_results)
 
-@app.get("/battery_simulator/day_range_csv")
+@app.get("/battery_and_solar_simulator/day_range_csv")
 async def simulate_battery_for_range_csv(start_date: datetime.date,
                                      end_date: datetime.date,
                                      simulated_battery_capacity_kwh: float,
@@ -111,13 +111,13 @@ async def simulate_battery_for_range_csv(start_date: datetime.date,
     if num_days < 0:
         raise ValueError("end_date: %s < start_date: %s" % (end_date, start_date))
     parser = server.lib.tesla_monthly_data_parser.TeslaDataParser(TESLA_DATA_DIR_PATH)
-    battery_simulator = server.lib.battery_simulator.BatterySimulator()
+    battery_and_solar_simulator = server.lib.battery_and_solar_simulator.BatteryAndSolarSimulator()
     all_day_solar_data = parser.data_for_date_range(start_date, end_date)
-    battery_sim_data = battery_simulator.simulate_day_range(solar_data_for_days=all_day_solar_data,
+    battery_sim_data = battery_and_solar_simulator.simulate_day_range(solar_data_for_days=all_day_solar_data,
                                                             simulated_battery_capacity_kwh=simulated_battery_capacity_kwh,
                                                             solar_multiplier=solar_multiplier)
-    csv_data = battery_simulator.simulated_days_to_csv(battery_sim_data)
-    headers = {'Content-Disposition': 'attachment; filename="battery_simulation.csv"'}
+    csv_data = battery_and_solar_simulator.simulated_days_to_csv(battery_sim_data)
+    headers = {'Content-Disposition': 'attachment; filename="battery_and_solar_simulation.csv"'}
     return StreamingResponse(content=csv_data, headers=headers, media_type="test/csv")
 
 @app.get("/monthly_data")
