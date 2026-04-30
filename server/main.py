@@ -85,7 +85,8 @@ async def day_data_for_range(start_date: str, end_date: str) -> DayDataForRangeR
 @app.get("/battery_simulator/day_range")
 async def simulate_battery_for_range(start_date: datetime.date,
                                      end_date: datetime.date,
-                                     simulated_battery_capacity_kwh: float
+                                     simulated_battery_capacity_kwh: float,
+                                     solar_multiplier: float = 1.0,
                                      ) -> DailyBatterySimulatorResponse:
     format = "%Y-%m-%d"
     num_days = (end_date - start_date).days
@@ -94,14 +95,17 @@ async def simulate_battery_for_range(start_date: datetime.date,
     parser = server.lib.tesla_monthly_data_parser.TeslaDataParser(TESLA_DATA_DIR_PATH)
     battery_simulator = server.lib.battery_simulator.BatterySimulator()
     all_day_solar_data = parser.data_for_date_range(start_date, end_date)
-    battery_sim_data = battery_simulator.simulate_day_range(all_day_solar_data, simulated_battery_capacity_kwh)
+    battery_sim_data = battery_simulator.simulate_day_range(solar_data_for_days=all_day_solar_data,
+                                                            simulated_battery_capacity_kwh=simulated_battery_capacity_kwh,
+                                                            solar_multiplier=solar_multiplier)
     days_to_sim_results = dict([(x.date.strftime(format), x) for x in battery_sim_data])
     return DailyBatterySimulatorResponse(days_to_simulated_result=days_to_sim_results)
 
 @app.get("/battery_simulator/day_range_csv")
 async def simulate_battery_for_range_csv(start_date: datetime.date,
                                      end_date: datetime.date,
-                                     simulated_battery_capacity_kwh: float
+                                     simulated_battery_capacity_kwh: float,
+                                     solar_multiplier: float = 1.0,
                                      ):
     num_days = (end_date - start_date).days
     if num_days < 0:
@@ -109,7 +113,9 @@ async def simulate_battery_for_range_csv(start_date: datetime.date,
     parser = server.lib.tesla_monthly_data_parser.TeslaDataParser(TESLA_DATA_DIR_PATH)
     battery_simulator = server.lib.battery_simulator.BatterySimulator()
     all_day_solar_data = parser.data_for_date_range(start_date, end_date)
-    battery_sim_data = battery_simulator.simulate_day_range(all_day_solar_data, simulated_battery_capacity_kwh)
+    battery_sim_data = battery_simulator.simulate_day_range(solar_data_for_days=all_day_solar_data,
+                                                            simulated_battery_capacity_kwh=simulated_battery_capacity_kwh,
+                                                            solar_multiplier=solar_multiplier)
     csv_data = battery_simulator.simulated_days_to_csv(battery_sim_data)
     headers = {'Content-Disposition': 'attachment; filename="battery_simulation.csv"'}
     return StreamingResponse(content=csv_data, headers=headers, media_type="test/csv")

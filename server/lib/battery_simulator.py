@@ -98,13 +98,14 @@ class BatterySimulator:
   def simulate_day_range(self,
                          solar_data_for_days: list[server.lib.tesla_monthly_data_parser.DailyData],
                          simulated_battery_capacity_kwh: float,
-                         ) -> list[DailyBatterySimResult]:
+                         solar_multiplier: float = 1.0) -> list[DailyBatterySimResult]:
     results = []  # Have to do this to get access to prior result
     for daily_solar_data in solar_data_for_days:
       prior_day_sim_result = results[-1] if results else None
       cur_day_sim_result = self._simulate_day(day_solar_data=daily_solar_data,
                                               prior_day_battery_state=prior_day_sim_result,
-                                              simulated_battery_capacity_kwh=simulated_battery_capacity_kwh)
+                                              simulated_battery_capacity_kwh=simulated_battery_capacity_kwh,
+                                              solar_multiplier=solar_multiplier)
       results.append(cur_day_sim_result)
     return results
 
@@ -118,19 +119,21 @@ class BatterySimulator:
     inflow_kwh = day_solar_data.solar_energy_kwh + day_solar_data.from_powerwall_kwh + day_solar_data.from_grid_kwh
     return inflow_kwh - (day_solar_data.to_grid_kwh + day_solar_data.home_kwh)
 
-  def _simulate_day(self,
-                    day_solar_data: server.lib.tesla_monthly_data_parser.DailyData,
+  def _simulate_day(self, day_solar_data: server.lib.tesla_monthly_data_parser.DailyData,
                     prior_day_battery_state: DailyBatterySimResult | None,
                     simulated_battery_capacity_kwh: float,
+                    solar_multiplier: float = 1.0,
                     morning_fraction_of_home_usage: float = 0.5) -> DailyBatterySimResult:
     prior_to_powerwall = self._compute_to_powerwall(day_solar_data)
 
+    solar_energy_kwh = day_solar_data.solar_energy_kwh * solar_multiplier
+
     # Solar energy that was used directly by the home bypassing the battery entirely
     # This number if the same regardless of the amount of battery
-    direct_solar_kwh = day_solar_data.solar_energy_kwh - day_solar_data.to_grid_kwh - prior_to_powerwall
+    direct_solar_kwh = solar_energy_kwh - day_solar_data.to_grid_kwh - prior_to_powerwall
 
     # Solar that wasn't direct
-    non_direct_solar_kwh = day_solar_data.solar_energy_kwh - direct_solar_kwh
+    non_direct_solar_kwh = solar_energy_kwh - direct_solar_kwh
 
     # Home usage that wasn't fulfilled by direct_solar
     home_kwh_after_direct_solar = day_solar_data.home_kwh - direct_solar_kwh
@@ -156,13 +159,13 @@ class BatterySimulator:
     eod_battery_kwh = postcharge_battery_kwh - postcharge_battery_usage_kwh
     total_battery_usage_kwh = precharge_battery_usage_kwh + postcharge_battery_usage_kwh
 
-    # from_grid = deficet of home_kwh that battery + direct solar couldn't account for
+    # from_grid = deficit of home_kwh that battery + direct solar couldn't account for
     from_grid_kwh = day_solar_data.home_kwh - (precharge_battery_usage_kwh + direct_solar_kwh + postcharge_battery_usage_kwh)
 
     return DailyBatterySimResult(
       date=day_solar_data.date,
       home_kwh=day_solar_data.home_kwh,
-      solar_energy_kwh=day_solar_data.solar_energy_kwh,
+      solar_energy_kwh=solar_energy_kwh,
 
       eod_battery_kwh=eod_battery_kwh,
       battery_usage_kwh=total_battery_usage_kwh,
