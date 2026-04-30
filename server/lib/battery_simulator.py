@@ -189,8 +189,6 @@ class BatterySimulator:
                  "postcharge_battery_kwh"]
     writer.writerow(col_names)
     for simulated_day in simulated_days:
-      #date_str = simulated_day.date.strftime("%Y-%m-%d")
       full_row = [getattr(simulated_day, x) for x in col_names]
-      #full_row = [date_str] + rest_of_row
       writer.writerow(full_row)
     return out_stringio.getvalue()
