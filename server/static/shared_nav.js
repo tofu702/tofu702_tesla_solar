@@ -4,7 +4,7 @@
         { path: '/static/day_data_unified.html', label: 'Day Data' },
         { path: '/static/monthly_comparison.html', label: 'Monthly Data' },
         { path: '/static/year_over_year_by_day.html', label: 'Year Over Year' },
-        { path: '/static/battery_and_solar_simulator.html', label: 'Battery Simulator' }
+        { path: '/static/battery_and_solar_simulator.html', label: 'Daily Simulator' }
     ];
 
     var currentPath = window.location.pathname;

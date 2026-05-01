@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battery Simulator</title>
+    <title>Battery &amp; Solar Simulator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -78,6 +78,34 @@
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
         }
+        .scenario-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+        .scenario-table th, .scenario-table td {
+            text-align: center;
+            padding: 3px 2px;
+        }
+        .scenario-table th {
+            font-weight: bold;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .scenario-table input[type="number"] {
+            width: 45px;
+            padding: 4px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .scenario-table input[type="checkbox"] {
+            margin: 0;
+            padding: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
         .checkbox-container, .radio-container {
             margin: 10px 0;
         }
@@ -112,7 +140,7 @@
 <body>
     <div class="container">
         <div class="main-content">
-            <h1>Battery Simulator</h1>
+            <h1>Battery &amp; Solar Simulator</h1>
             
             <div class="controls">
                 <div class="control-group">
@@ -209,14 +237,38 @@
         
         <div class="sidebar">
             <div class="sidebar-section">
-                <h3>Powerwalls</h3>
-                <div class="checkbox-container">
-                    <label><input type="checkbox" class="batteryControl" value="0"> 0 Powerwalls</label>
-                    <label><input type="checkbox" class="batteryControl" value="13.5" checked> 1 Powerwall</label>
-                    <label><input type="checkbox" class="batteryControl" value="27.0"> 2 Powerwalls</label>
-                    <label><input type="checkbox" class="batteryControl" value="40.5"> 3 Powerwalls</label>
-                    <label><input type="checkbox" class="batteryControl" value="54.0"> 4 Powerwalls</label>
-                </div>
+                <h3>Scenarios</h3>
+                <table class="scenario-table">
+                    <thead>
+                        <tr>
+                            <th>Enabled</th>
+                            <th>Powerwalls</th>
+                            <th>Solar Mult.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="checkbox" class="scenario-enabled" data-index="0" checked></td>
+                            <td><input type="number" class="scenario-powerwalls" data-index="0" min="0" max="10" value="1" /></td>
+                            <td><input type="number" class="scenario-solar" data-index="0" step="0.1" value="1.0" disabled /></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" class="scenario-enabled" data-index="1"></td>
+                            <td><input type="number" class="scenario-powerwalls" data-index="1" min="0" max="10" value="2" /></td>
+                            <td><input type="number" class="scenario-solar" data-index="1" step="0.1" value="1.0" /></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" class="scenario-enabled" data-index="2"></td>
+                            <td><input type="number" class="scenario-powerwalls" data-index="2" min="0" max="10" value="3" /></td>
+                            <td><input type="number" class="scenario-solar" data-index="2" step="0.1" value="1.0" /></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" class="scenario-enabled" data-index="3"></td>
+                            <td><input type="number" class="scenario-powerwalls" data-index="3" min="0" max="10" value="4" /></td>
+                            <td><input type="number" class="scenario-solar" data-index="3" step="0.1" value="1.0" /></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div class="sidebar-section">
                 <h3>Metric</h3>
@@ -271,8 +323,8 @@
             return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
         };
 
-        const fetchBatteryData = async (startDate, endDate, capacity) => {
-            const response = await fetch(`/battery_and_solar_simulator/day_range?start_date=${startDate}&end_date=${endDate}&simulated_battery_capacity_kwh=${capacity}`);
+        const fetchBatteryData = async (startDate, endDate, capacity, solarMultiplier = 1.0) => {
+            const response = await fetch(`/battery_and_solar_simulator/day_range?start_date=${startDate}&end_date=${endDate}&simulated_battery_capacity_kwh=${capacity}&solar_multiplier=${solarMultiplier}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
             return data.days_to_simulated_result;
@@ -288,12 +340,22 @@
             const aggregationMode = document.getElementById('aggregationSelect').value;
             const isAggregationOnly = document.getElementById('aggregationOnlySelector').checked;
             
-            const selectedBatteries = Array.from(document.querySelectorAll('.batteryControl:checked')).map(cb => parseFloat(cb.value));
+      const selectedScenarios = [];
+            document.querySelectorAll('.scenario-enabled:checked').forEach(cb => {
+                const idx = parseInt(cb.dataset.index);
+                const pwRows = cb.closest('table').querySelectorAll('tr');
+                const pwInput = document.querySelector(`.scenario-powerwalls[data-index="${idx}"]`);
+                const solarInput = document.querySelector(`.scenario-solar[data-index="${idx}"]`);
+                const numPowerwalls = parseInt(pwInput.value) || 0;
+                const solarMultiplier = parseFloat(solarInput.value) || 1.0;
+                const capacity = numPowerwalls * 13.5;
+                selectedScenarios.push({ capacity, solarMultiplier, numPowerwalls });
+            });
             const selectedMetric = document.querySelector('.metricRadio:checked').value;
             const metricConfig = metricConfigs[selectedMetric];
 
-            if (selectedBatteries.length === 0) {
-                alert('Please select at least one Powerwall option');
+            if (selectedScenarios.length === 0) {
+                alert('Please enable at least one scenario');
                 return;
             }
 
@@ -310,7 +372,7 @@
             let commonDates = [];
 
             try {
-                const results = await Promise.all(selectedBatteries.map(cap => fetchBatteryData(startDateStr, endDateStr, cap)));
+                const results = await Promise.all(selectedScenarios.map(s => fetchBatteryData(startDateStr, endDateStr, s.capacity, s.solarMultiplier)));
                 
                 // Use the first result to establish labels and dates
                 const firstResult = results[0];
@@ -320,8 +382,8 @@
 
                 for (let i = 0; i < results.length; i++) {
                     const result = results[i];
-                    const capacity = selectedBatteries[i];
-                    const labelBase = `${metricConfig.name} (${capacity} kWh)`;
+                    const scenario = selectedScenarios[i];
+                    const labelBase = `${metricConfig.name} (${scenario.numPowerwalls} PW, ×${scenario.solarMultiplier.toFixed(1)})`;
 
                     const rawData = commonDates.map(date => result[date] ? result[date][selectedMetric] : null);
 
@@ -393,7 +455,8 @@
         document.getElementById('updateChartBtn').addEventListener('click', updateChart);
         document.getElementById('aggregationSelect').addEventListener('change', updateChart);
         document.querySelectorAll('.metricControl').forEach(el => el.addEventListener('change', updateChart));
-        document.querySelectorAll('.batteryControl').forEach(el => el.addEventListener('change', updateChart));
+        document.querySelectorAll('.scenario-enabled, .scenario-powerwalls, .scenario-solar').forEach(el => el.addEventListener('change', updateChart));
+        document.querySelectorAll('.scenario-powerwalls, .scenario-solar').forEach(el => el.addEventListener('input', updateChart));
         document.querySelectorAll('.metricRadio').forEach(el => el.addEventListener('change', updateChart));
 
         createUnifiedChart();
