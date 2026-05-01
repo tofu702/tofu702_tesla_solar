@@ -118,3 +118,19 @@ Create a new "Battery Simulator" page that simulates the behavior of the system 
 * Get the page names from `main.html`, but don't add the top nav to `main.html`
 * Try to factor this code out so that we don't have to modify the pages individually
 * Make this approach modular enough to support additional pages
+
+# Step 13: Add Solar Simulation to Battery Simulator
+Replace the "Powerwalls" section of the simulator with "Scenarios" that support both a powerwall count and a solar multiplier (how much solar power increases or decreases relative to the data). Support up to 4 scenarios, including the "Original". 
+* Scenarios should be expressed as a table with three items in each row:
+  * Enabled (Checkbox)
+  * Number of Powerwalls (Integer text field), defaults to 1
+  * Solar multiplier (float text field), defaults to 1.0
+* The first scenario is the "Original". It consists of 1 powerwall (editable) and a solar multiplier of 1.0 that is fixed.
+* The remaining scenarios should default be 
+  * Powerwalls=2, solar_multiplier=1.0
+  * Powerwalls=3, solar_multiplier=1.0
+  * Powerwalls=4, solar_multiplier=1.0
+* Redraw when fields change or the Enabled check boxes are checked/uncheckd
+
+## Notes
+* Re-read `openapi.json`.
