@@ -126,14 +126,16 @@ class BatteryAndSolarSimulator:
                     morning_fraction_of_home_usage: float = 0.5) -> DailyBatteryAndSolarSimResult:
     prior_to_powerwall = self._compute_to_powerwall(day_solar_data)
 
-    solar_energy_kwh = day_solar_data.solar_energy_kwh * solar_multiplier
+    adjusted_solar_energy_kwh = day_solar_data.solar_energy_kwh * solar_multiplier
 
     # Solar energy that was used directly by the home bypassing the battery entirely
     # This number if the same regardless of the amount of battery
-    direct_solar_kwh = solar_energy_kwh - day_solar_data.to_grid_kwh - prior_to_powerwall
+    # To simplify things we'll assume that additional energy from adjusted solar is only used to charge the battery
+    solar_available_for_direct_kwh = min(adjusted_solar_energy_kwh, day_solar_data.solar_energy_kwh)
+    direct_solar_kwh = solar_available_for_direct_kwh - day_solar_data.to_grid_kwh - prior_to_powerwall
 
-    # Solar that wasn't direct
-    non_direct_solar_kwh = solar_energy_kwh - direct_solar_kwh
+    # Solar that wasn't direct (goes to grid or battery)
+    non_direct_solar_kwh = adjusted_solar_energy_kwh - direct_solar_kwh
 
     # Home usage that wasn't fulfilled by direct_solar
     home_kwh_after_direct_solar = day_solar_data.home_kwh - direct_solar_kwh
@@ -165,7 +167,7 @@ class BatteryAndSolarSimulator:
     return DailyBatteryAndSolarSimResult(
       date=day_solar_data.date,
       home_kwh=day_solar_data.home_kwh,
-      solar_energy_kwh=solar_energy_kwh,
+      solar_energy_kwh=adjusted_solar_energy_kwh,
 
       eod_battery_kwh=eod_battery_kwh,
       battery_usage_kwh=total_battery_usage_kwh,
