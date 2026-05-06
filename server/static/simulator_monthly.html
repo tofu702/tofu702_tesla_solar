@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery & Solar Simulator - Monthly View</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .control-group {
+            margin: 10px;
+            display: inline-block;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-top: 20px;
+        }
+        .sidebar {
+            width: 250px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            height: fit-content;
+        }
+        .sidebar-section {
+            margin-bottom: 20px;
+        }
+        .sidebar-section h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .scenario-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+        .scenario-table th, .scenario-table td {
+            text-align: center;
+            padding: 3px 2px;
+        }
+        .scenario-table th {
+            font-weight: bold;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .scenario-table input[type="number"] {
+            width: 45px;
+            padding: 4px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .scenario-table input[type="checkbox"] {
+            margin: 0;
+            padding: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .main-content {
+            flex: 1;
+        }
+        .container-layout {
+            display: flex;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .container-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/shared_nav.css">
+    <script src="/static/shared_nav.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Battery &amp; Solar Simulator - Monthly View</h1>
+        
+        <div class="container-layout">
+            <div class="main-content">
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Select Years to Display:</label>
+                        <div style="display: flex; gap: 15px;">
+                            <label>
+                                <input type="checkbox" id="year2024" value="2024" checked>
+                                2024
+                            </label>
+                            <label>
+                                <input type="checkbox" id="year2025" value="2025" checked>
+                                2025
+                            </label>
+                            <label>
+                                <input type="checkbox" id="year2026" value="2026" checked>
+                                2026
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <button id="updateChartBtn">Update Chart</button>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Scenarios</h3>
+                    <table class="scenario-table">
+                        <thead>
+                            <tr>
+                                <th>Enabled</th>
+                                <th>Powerwalls</th>
+                                <th>Solar Mult.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="checkbox" class="scenario-enabled" data-index="0" checked></td>
+                                <td><input type="number" class="scenario-powerwalls" data-index="0" min="0" max="10" value="1" /></td>
+                                <td><input type="number" class="scenario-solar" data-index="0" step="0.1" value="1.0" disabled /></td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" class="scenario-enabled" data-index="1"></td>
+                                <td><input type="number" class="scenario-powerwalls" data-index="1" min="0" max="10" value="2" /></td>
+                                <td><input type="number" class="scenario-solar" data-index="1" step="0.1" value="1.0" /></td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" class="scenario-enabled" data-index="2"></td>
+                                <td><input type="number" class="scenario-powerwalls" data-index="2" min="0" max="10" value="3" /></td>
+                                <td><input type="number" class="scenario-solar" data-index="2" step="0.1" value="1.0" /></td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" class="scenario-enabled" data-index="3"></td>
+                                <td><input type="number" class="scenario-powerwalls" data-index="3" min="0" max="10" value="4" /></td>
+                                <td><input type="number" class="scenario-solar" data-index="3" step="0.1" value="1.0" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let monthlyChart = null;
+
+
+        function createMonthlyChart() {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Monthly Grid Usage Simulation'
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month'
+                            },
+                            ticks: {
+                                maxRotation: 45
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Energy (kWh)'
+                            },
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        function parseDateStr(dateStr) {
+            const parts = dateStr.split('-');
+            const year = parts[0];
+            const month = parts[1];
+            return { year, month };
+        }
+
+        const fetchSimulationData = async (capacity, solarMultiplier) => {
+            const response = await fetch(`/battery_and_solar_simulator/monthly_data?simulated_battery_capacity_kwh=${capacity}&solar_multiplier=${solarMultiplier}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return await response.json();
+        };
+
+        const fetchAllScenarioData = async (enabledScenarios, selectedYears) => {
+            const scenarioResults = await Promise.all(
+                enabledScenarios.map(s => fetchSimulationData(s.capacity, s.solarMultiplier))
+            );
+
+            const scenarioLabels = enabledScenarios.map(s => `${s.numPowerwalls} PW, ×${s.solarMultiplier.toFixed(1)}`);
+            const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            const dataMap = {};
+
+            for (const year of selectedYears) {
+                for (let si = 0; si < scenarioResults.length; si++) {
+                    for (const item of scenarioResults[si]) {
+                        const { year: dataYear, month: dataMonth } = parseDateStr(item.first_day_of_month);
+                        if (dataYear === year) {
+                            const key = `${dataYear}-${dataMonth}`;
+                            if (!dataMap[key]) {
+                                dataMap[key] = {};
+                            }
+                            dataMap[key][scenarioLabels[si]] = item.from_grid_kwh;
+                        }
+                    }
+                }
+            }
+
+            return { dataMap, scenarioLabels, monthLabels };
+        };
+
+        const updateChart = async () => {
+            const yearCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="year"]');
+            const selectedYears = [];
+            yearCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedYears.push(checkbox.value);
+                }
+            });
+
+            const enabledScenarios = [];
+            document.querySelectorAll('.scenario-enabled:checked').forEach(cb => {
+                const idx = parseInt(cb.dataset.index);
+                const pwInput = document.querySelector(`.scenario-powerwalls[data-index="${idx}"]`);
+                const solarInput = document.querySelector(`.scenario-solar[data-index="${idx}"]`);
+                const numPowerwalls = parseInt(pwInput.value) || 0;
+                const solarMultiplier = parseFloat(solarInput.value) || 1.0;
+                const capacity = numPowerwalls * 13.5;
+                enabledScenarios.push({ capacity, solarMultiplier, numPowerwalls });
+            });
+
+            if (enabledScenarios.length === 0) {
+                alert('Please enable at least one scenario');
+                return;
+            }
+            if (selectedYears.length === 0) {
+                alert('Please select at least one year');
+                return;
+            }
+
+            const { dataMap, scenarioLabels, monthLabels } = await fetchAllScenarioData(enabledScenarios, selectedYears);
+
+            const scenarioColors = [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)'
+            ];
+
+            // Outer loop: iterate over year-months, inner loop: iterate over scenarios to build each dataset
+            const allDatasets = scenarioLabels.map((scenarioLabel, si) => ({
+                label: scenarioLabel,
+                data: [],
+                backgroundColor: scenarioColors[si % scenarioColors.length],
+                borderColor: scenarioColors[si % scenarioColors.length].replace('0.8', '1'),
+                borderWidth: 1
+            }));
+
+            const displayLabels = [];
+            for (const key of Object.keys(dataMap).sort()) {
+                const [year, month] = key.split('-');
+                const shortYear = year.slice(-2);
+                displayLabels.push(`${shortYear}-${monthLabels[parseInt(month) - 1]}`);
+                const monthScenarios = dataMap[key];
+                for (let si = 0; si < scenarioLabels.length; si++) {
+                    allDatasets[si].data.push(monthScenarios[scenarioLabels[si]] ?? null);
+                }
+            }
+
+            // Filter out any datasets where all values are null
+            const validDatasets = allDatasets.filter(ds => ds.data.some(v => v !== null));
+
+            monthlyChart.data.labels = displayLabels;
+            monthlyChart.data.datasets = validDatasets;
+
+            const scenarioNames = enabledScenarios.map(s => `${s.numPowerwalls} PW, ×${s.solarMultiplier.toFixed(1)}`);
+            monthlyChart.options.plugins.title.text = `Monthly Grid Usage Simulation - ${scenarioNames.join(', ')}`;
+
+            monthlyChart.options.scales.y.min = 0;
+            monthlyChart.update();
+        };
+
+        document.getElementById('updateChartBtn').addEventListener('click', updateChart);
+        const yearCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="year"]');
+        yearCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateChart);
+        });
+        document.querySelectorAll('.scenario-enabled, .scenario-powerwalls, .scenario-solar').forEach(el => el.addEventListener('change', updateChart));
+        document.querySelectorAll('.scenario-powerwalls, .scenario-solar').forEach(el => el.addEventListener('input', updateChart));
+
+        createMonthlyChart();
+        updateChart();
+    </script>
+</body>
+</html>

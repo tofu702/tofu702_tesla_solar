@@ -134,3 +134,16 @@ Replace the "Powerwalls" section of the simulator with "Scenarios" that support 
 
 ## Notes
 * Re-read `openapi.json`.
+
+
+# Step 14: Simulator Monthly View
+Goal: Build a page that shows simulation results for each month. It uses Scenarios UI from `battery_and_solar_simulator.html` and monthly view similar to the one in `monthly_comparison.html`.  
+
+## Interface
+* Put the scenarios UI above the bar charts for now
+* Have a year picker like `monthly_comparison.html` that lets the user check boxes for which years to compare
+* For now, we will just look at `from_grid_kwh` (presented in the UI as "Grid Usage"). We may add more metrics later.
+* Unlike `monthly_comparison.html` the x-axis should be year-month (ex: 25-Jan for January 2025). IE: We don't want to loop by month the way we do in `monthly_comparison.html`; the x-axis should just be straight chronological order.
+
+## Notes
+* Re-read `openapi.json` and use the `battery_and_solar_simulator/monthly_data` end point
