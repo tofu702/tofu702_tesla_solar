@@ -32,10 +32,24 @@ class DailyBatteryAndSolarSimResult(pydantic.BaseModel):
   postcharge_battery_kwh: float = None
 
 
-# @dataclasses.dataclass
-# class BatterySimulatorDayData:
-#   date: datetime.date
-#   solar_
+class MonthlyBatteryAndSolarSimResult(pydantic.BaseModel):
+  first_day_of_month: datetime.date = None
+
+  # Pass through stats
+  home_kwh: float = None
+  solar_energy_kwh: float = None
+
+  # Key results
+  battery_usage_kwh: float = None
+  from_grid_kwh: float = None
+
+  # Debug Data
+  precharge_home_kwh: float = None
+  during_charge_home_kwh: float = None  # Aka solar direct
+  postcharge_home_kwh: float = None
+  precharge_battery_usage_kwh: float = None
+  postcharge_battery_usage_kwh: float = None
+
 
 class BatteryAndSolarSimulator:
   """ Basic Battery Simulator Model
@@ -108,6 +122,52 @@ class BatteryAndSolarSimulator:
                                               solar_multiplier=solar_multiplier)
       results.append(cur_day_sim_result)
     return results
+
+  def simulate_months(self,
+                      solar_data_for_days: list[server.lib.tesla_monthly_data_parser.DailyData],
+                      simulated_battery_capacity_kwh: float,
+                      solar_multiplier: float = 1.0) -> list[MonthlyBatteryAndSolarSimResult]:
+    results = []
+    current_month_data: MonthlyBatteryAndSolarSimResult = None
+    simulated_days = self.simulate_day_range(solar_data_for_days=solar_data_for_days,
+                                             simulated_battery_capacity_kwh=simulated_battery_capacity_kwh,
+                                             solar_multiplier=solar_multiplier)
+    for simulated_day in simulated_days:
+      current_month_first_day_of_month = self._compute_first_day_of_month(simulated_day.date)
+
+      if current_month_data is None:
+        current_month_data = self._create_new_month_data(current_month_first_day_of_month)
+      elif current_month_first_day_of_month != current_month_data.first_day_of_month:
+        results.append(current_month_data)
+        current_month_data = self._create_new_month_data(current_month_first_day_of_month)
+
+      current_month_data.home_kwh += simulated_day.home_kwh
+      current_month_data.solar_energy_kwh += simulated_day.solar_energy_kwh
+      current_month_data.battery_usage_kwh += simulated_day.battery_usage_kwh
+      current_month_data.from_grid_kwh += simulated_day.from_grid_kwh
+      current_month_data.precharge_home_kwh += simulated_day.precharge_home_kwh
+      current_month_data.during_charge_home_kwh += simulated_day.during_charge_home_kwh
+      current_month_data.postcharge_home_kwh += simulated_day.postcharge_home_kwh
+      current_month_data.precharge_battery_usage_kwh += simulated_day.precharge_battery_usage_kwh
+      current_month_data.postcharge_battery_usage_kwh += simulated_day.postcharge_battery_usage_kwh
+
+    results.append(current_month_data)
+    return results
+
+  def _create_new_month_data(self, first_day_of_month: datetime.date) -> MonthlyBatteryAndSolarSimResult:
+    return MonthlyBatteryAndSolarSimResult(first_day_of_month=first_day_of_month,
+                                           home_kwh=0,
+                                           solar_energy_kwh=0,
+                                           battery_usage_kwh=0,
+                                           from_grid_kwh=0,
+                                           precharge_home_kwh=0,
+                                           during_charge_home_kwh=0,
+                                           postcharge_home_kwh=0,
+                                           precharge_battery_usage_kwh=0,
+                                           postcharge_battery_usage_kwh=0)
+
+  def _compute_first_day_of_month(self, date: datetime.date) -> datetime.date:
+    return date.replace(day=1)
 
   def _compute_to_powerwall(self, day_solar_data: server.lib.tesla_monthly_data_parser.DailyData):
     # basically, inflows must equal outflows

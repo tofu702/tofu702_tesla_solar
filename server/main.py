@@ -28,6 +28,7 @@ class DayDataForRangeResponse(pydantic.BaseModel):
 class DailyBatterySimulatorResponse(pydantic.BaseModel):
     days_to_simulated_result: dict[str, server.lib.battery_and_solar_simulator.DailyBatteryAndSolarSimResult]
 
+
 # Root endpoint
 @app.get("/")
 async def read_root():
@@ -119,6 +120,20 @@ async def simulate_battery_for_range_csv(start_date: datetime.date,
     csv_data = battery_and_solar_simulator.simulated_days_to_csv(battery_sim_data)
     headers = {'Content-Disposition': 'attachment; filename="battery_and_solar_simulation.csv"'}
     return StreamingResponse(content=csv_data, headers=headers, media_type="test/csv")
+
+@app.get("/battery_and_solar_simulator/monthly_data")
+async def simulate_battery_for_months(simulated_battery_capacity_kwh: float,
+                                      solar_multiplier: float = 1.0
+                                      ) -> list[server.lib.battery_and_solar_simulator.MonthlyBatteryAndSolarSimResult]:
+    parser = server.lib.tesla_monthly_data_parser.TeslaDataParser(TESLA_DATA_DIR_PATH)
+    battery_and_solar_simulator = server.lib.battery_and_solar_simulator.BatteryAndSolarSimulator()
+    first_date_of_first_month, first_date_of_last_month = parser.get_first_days_of_first_and_last_months()
+    last_date_to_ask_for = first_date_of_last_month + datetime.timedelta(days=31) # Guaranteed to be next month
+    all_solar_data = parser.data_for_date_range(first_date_of_first_month, last_date_to_ask_for)
+    simulated_months = battery_and_solar_simulator.simulate_months(solar_data_for_days=all_solar_data,
+                                                                   simulated_battery_capacity_kwh=simulated_battery_capacity_kwh,
+                                                                   solar_multiplier=solar_multiplier)
+    return simulated_months
 
 @app.get("/monthly_data")
 async def monthly_data() -> list[server.lib.tesla_monthly_data_parser.MonthlyData]:

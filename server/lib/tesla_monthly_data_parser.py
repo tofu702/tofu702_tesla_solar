@@ -103,11 +103,8 @@ class TeslaDataParser:
       
       # Parse the CSV file to get daily data
       daily_data_list = self._parse_csv_file(file_path)
-      
-      # Extract the first day of the month from the filename (e.g., "2024_10.csv" -> 2024-10-01)
-      year_month_str = file_name.replace('.csv', '')
-      year, month = map(int, year_month_str.split('_'))
-      first_day_of_month = datetime.date(year, month, 1)
+
+      first_day_of_month = self._filename_to_first_day_of_month(file_name)
 
       monthly_data = MonthlyData(
         first_day_of_month=first_day_of_month,
@@ -136,6 +133,18 @@ class TeslaDataParser:
       monthly_data_list.append(monthly_data)
     
     return monthly_data_list
+
+  def get_first_days_of_first_and_last_months(self) -> tuple[datetime.date, datetime.date]:
+    first_days = [self._filename_to_first_day_of_month(x) for x in os.listdir(self.data_file_dirpath) if x.endswith('.csv')]
+    first_days.sort()
+    return first_days[0], first_days[-1]
+
+  def _filename_to_first_day_of_month(self, file_name: str) -> date:
+    # Extract the first day of the month from the filename (e.g., "2024_10.csv" -> 2024-10-01)
+    year_month_str = file_name.replace('.csv', '')
+    year, month = map(int, year_month_str.split('_'))
+    first_day_of_month = datetime.date(year, month, 1)
+    return first_day_of_month
 
 
 def main():
