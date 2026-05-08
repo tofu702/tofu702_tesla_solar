@@ -23,6 +23,18 @@
             color: #333;
             text-align: center;
         }
+        .top-controls {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .top-controls-left {
+            flex: 1;
+        }
+        .top-controls-right {
+            flex-shrink: 0;
+            min-width: 280px;
+        }
         .controls {
             margin: 20px 0;
             text-align: left;
@@ -54,13 +66,64 @@
             height: 500px;
             margin-top: 20px;
         }
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            margin-top: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: -2px;
+        }
+        .tab-btn.active {
+            background-color: white;
+            color: #007bff;
+            border-bottom: 2px solid white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .summary-table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .summary-table th, .summary-table td {
+            padding: 8px 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .summary-table th {
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+        .summary-table td:first-child, .summary-table th:first-child {
+            text-align: left;
+            font-weight: bold;
+            background-color: #fafafa;
+        }
+        .summary-table tr:nth-child(even) td:not(:first-child) {
+            background-color: #fcfcfc;
+        }
         .sidebar {
-            width: 250px;
             padding: 15px;
             background-color: #f9f9f9;
             border-radius: 8px;
             border: 1px solid #ddd;
-            height: fit-content;
         }
         .sidebar-section {
             margin-bottom: 20px;
@@ -99,21 +162,7 @@
             height: 16px;
             cursor: pointer;
         }
-        .main-content {
-            flex: 1;
-        }
-        .container-layout {
-            display: flex;
-            gap: 20px;
-        }
-        @media (max-width: 768px) {
-            .container-layout {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-            }
-        }
+
     </style>
     <link rel="stylesheet" href="/static/shared_nav.css">
     <script src="/static/shared_nav.js"></script>
@@ -122,8 +171,8 @@
     <div class="container">
         <h1>Battery &amp; Solar Simulator - Monthly View</h1>
         
-        <div class="container-layout">
-            <div class="main-content">
+        <div class="top-controls">
+            <div class="top-controls-left">
                 <div class="controls">
                     <div class="control-group">
                         <label>Select Years to Display:</label>
@@ -142,59 +191,72 @@
                             </label>
                         </div>
                     </div>
-
-                    <div class="control-group">
-                        <button id="updateChartBtn">Update Chart</button>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
 
-            <div class="sidebar">
-                <div class="sidebar-section">
-                    <h3>Scenarios</h3>
-                    <table class="scenario-table">
-                        <thead>
-                            <tr>
-                                <th>Enabled</th>
-                                <th>Powerwalls</th>
-                                <th>Solar Mult.</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><input type="checkbox" class="scenario-enabled" data-index="0" checked></td>
-                                <td><input type="number" class="scenario-powerwalls" data-index="0" min="0" max="10" value="1" /></td>
-                                <td><input type="number" class="scenario-solar" data-index="0" step="0.1" value="1.0" disabled /></td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" class="scenario-enabled" data-index="1"></td>
-                                <td><input type="number" class="scenario-powerwalls" data-index="1" min="0" max="10" value="2" /></td>
-                                <td><input type="number" class="scenario-solar" data-index="1" step="0.1" value="1.0" /></td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" class="scenario-enabled" data-index="2"></td>
-                                <td><input type="number" class="scenario-powerwalls" data-index="2" min="0" max="10" value="3" /></td>
-                                <td><input type="number" class="scenario-solar" data-index="2" step="0.1" value="1.0" /></td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" class="scenario-enabled" data-index="3"></td>
-                                <td><input type="number" class="scenario-powerwalls" data-index="3" min="0" max="10" value="4" /></td>
-                                <td><input type="number" class="scenario-solar" data-index="3" step="0.1" value="1.0" /></td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="top-controls-right">
+                <div class="sidebar">
+                    <div class="sidebar-section">
+                        <h3>Scenarios</h3>
+                        <table class="scenario-table">
+                            <thead>
+                                <tr>
+                                    <th>Enabled</th>
+                                    <th>Powerwalls</th>
+                                    <th>Solar Mult.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="checkbox" class="scenario-enabled" data-index="0" checked></td>
+                                    <td><input type="number" class="scenario-powerwalls" data-index="0" min="0" max="10" value="1" /></td>
+                                    <td><input type="number" class="scenario-solar" data-index="0" step="0.1" value="1.0" disabled /></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="scenario-enabled" data-index="1"></td>
+                                    <td><input type="number" class="scenario-powerwalls" data-index="1" min="0" max="10" value="2" /></td>
+                                    <td><input type="number" class="scenario-solar" data-index="1" step="0.1" value="1.0" /></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="scenario-enabled" data-index="2"></td>
+                                    <td><input type="number" class="scenario-powerwalls" data-index="2" min="0" max="10" value="3" /></td>
+                                    <td><input type="number" class="scenario-solar" data-index="2" step="0.1" value="1.0" /></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="scenario-enabled" data-index="3"></td>
+                                    <td><input type="number" class="scenario-powerwalls" data-index="3" min="0" max="10" value="4" /></td>
+                                    <td><input type="number" class="scenario-solar" data-index="3" step="0.1" value="1.0" /></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="graph">Graph</button>
+            <button class="tab-btn" data-tab="summary">Summary</button>
+        </div>
+
+        <div class="tab-content active" id="graph-tab">
+            <div class="chart-container">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="tab-content" id="summary-tab">
+            <div class="summary-table-container">
+                <table class="summary-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
     </div>
 
     <script>
         let monthlyChart = null;
-
 
         function createMonthlyChart() {
             const ctx = document.getElementById('monthlyChart').getContext('2d');
@@ -254,34 +316,7 @@
             return await response.json();
         };
 
-        const fetchAllScenarioData = async (enabledScenarios, selectedYears) => {
-            const scenarioResults = await Promise.all(
-                enabledScenarios.map(s => fetchSimulationData(s.capacity, s.solarMultiplier))
-            );
-
-            const scenarioLabels = enabledScenarios.map(s => `${s.numPowerwalls} PW, ×${s.solarMultiplier.toFixed(1)}`);
-
-            const dataMap = {};
-
-            for (const year of selectedYears) {
-                for (let si = 0; si < scenarioResults.length; si++) {
-                    for (const item of scenarioResults[si]) {
-                        const { year: dataYear, month: dataMonth } = parseDateStr(item.first_day_of_month);
-                        if (dataYear === year) {
-                            const key = `${dataYear}-${dataMonth}`;
-                            if (!dataMap[key]) {
-                                dataMap[key] = {};
-                            }
-                            dataMap[key][scenarioLabels[si]] = item.from_grid_kwh;
-                        }
-                    }
-                }
-            }
-
-            return { dataMap, scenarioLabels };
-        };
-
-        const updateChart = async () => {
+        const getAllScenarioData = async () => {
             const yearCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="year"]');
             const selectedYears = [];
             yearCheckboxes.forEach(checkbox => {
@@ -290,7 +325,19 @@
                 }
             });
 
-            const enabledScenarios = [];
+            // Check if Original (scenario 0) is enabled
+            const origEnabled = document.querySelector('.scenario-enabled[data-index="0"]').checked;
+
+            // Always fetch Original data for baseline
+            const origPwInput = document.querySelector('.scenario-powerwalls[data-index="0"]');
+            const origSolarInput = document.querySelector('.scenario-solar[data-index="0"]');
+            const origNumPw = parseInt(origPwInput.value) || 0;
+            const origSolarMult = parseFloat(origSolarInput.value) || 1.0;
+            const origCapacity = origNumPw * 13.5;
+            const origResults = await fetchSimulationData(origCapacity, origSolarMult);
+
+            // Parse all enabled scenarios with their original indices
+            const enabledWithIdx = [];
             document.querySelectorAll('.scenario-enabled:checked').forEach(cb => {
                 const idx = parseInt(cb.dataset.index);
                 const pwInput = document.querySelector(`.scenario-powerwalls[data-index="${idx}"]`);
@@ -298,19 +345,98 @@
                 const numPowerwalls = parseInt(pwInput.value) || 0;
                 const solarMultiplier = parseFloat(solarInput.value) || 1.0;
                 const capacity = numPowerwalls * 13.5;
-                enabledScenarios.push({ capacity, solarMultiplier, numPowerwalls });
+                enabledWithIdx.push({ idx, capacity, solarMultiplier, numPowerwalls });
             });
 
-            if (enabledScenarios.length === 0) {
+            if (enabledWithIdx.length === 0) {
                 alert('Please enable at least one scenario');
-                return;
+                return null;
             }
             if (selectedYears.length === 0) {
                 alert('Please select at least one year');
-                return;
+                return null;
             }
 
-            const { dataMap, scenarioLabels } = await fetchAllScenarioData(enabledScenarios, selectedYears);
+            // Build origTotalData (always computed for baseline)
+            let origFromGrid = 0, origHome = 0, origSolar = 0, origBattery = 0;
+            for (const item of origResults) {
+                const { year, month } = parseDateStr(item.first_day_of_month);
+                if (selectedYears.includes(year)) {
+                    origFromGrid += item.from_grid_kwh;
+                    origHome += item.home_kwh;
+                    origSolar += item.solar_energy_kwh;
+                    origBattery += item.battery_usage_kwh;
+                }
+            }
+            const origTotalData = {
+                totalFromGrid: origFromGrid,
+                totalHome: origHome,
+                totalSolar: origSolar,
+                totalBatteryUsage: origBattery,
+                gridPercentHome: origHome > 0 ? (origFromGrid / origHome) * 100 : 0
+            };
+
+            // Build list of (label, results) for display scenarios
+            const displayScenarios = [];
+            const fetchTasks = [];
+
+            for (const es of enabledWithIdx) {
+                let label, results;
+                if (es.idx === 0) {
+                    label = 'Original';
+                    results = origResults;
+                } else {
+                    label = `${es.numPowerwalls} PW, ×${es.solarMultiplier.toFixed(1)}`;
+                    fetchTasks.push({ es, label });
+                }
+                displayScenarios.push({ label, results });
+            }
+
+            const fetchedResults = await Promise.all(
+                fetchTasks.map(f => fetchSimulationData(f.es.capacity, f.es.solarMultiplier))
+            );
+            for (let i = 0; i < fetchTasks.length; i++) {
+                displayScenarios.find(d => d.label === fetchTasks[i].label).results = fetchedResults[i];
+            }
+
+            const scenarioLabels = displayScenarios.map(d => d.label);
+
+            const dataMap = {};
+            const totalData = {};
+            for (const d of displayScenarios) {
+                totalData[d.label] = { totalFromGrid: 0, totalHome: 0, totalSolar: 0, totalBatteryUsage: 0 };
+            }
+
+            for (const year of selectedYears) {
+                for (const d of displayScenarios) {
+                    for (const item of d.results) {
+                        const { year: dataYear, month: dataMonth } = parseDateStr(item.first_day_of_month);
+                        if (dataYear === year) {
+                            const key = `${dataYear}-${dataMonth}`;
+                            if (!dataMap[key]) dataMap[key] = {};
+                            dataMap[key][d.label] = item.from_grid_kwh;
+                            totalData[d.label].totalFromGrid += item.from_grid_kwh;
+                            totalData[d.label].totalHome += item.home_kwh;
+                            totalData[d.label].totalSolar += item.solar_energy_kwh;
+                            totalData[d.label].totalBatteryUsage += item.battery_usage_kwh;
+                        }
+                    }
+                }
+            }
+            for (const d of displayScenarios) {
+                totalData[d.label].gridPercentHome =
+                    totalData[d.label].totalHome > 0 ?
+                    (totalData[d.label].totalFromGrid / totalData[d.label].totalHome) * 100 : 0;
+            }
+
+            return { dataMap, scenarioLabels, enabledScenarios: enabledWithIdx, origTotalData, totalData, selectedYears };
+        };
+
+        const updateChart = async () => {
+            const data = await getAllScenarioData();
+            if (!data) return;
+
+            const { dataMap, scenarioLabels, enabledScenarios, selectedYears } = data;
 
             const scenarioColors = [
                 'rgba(255, 99, 132, 0.8)',
@@ -319,7 +445,6 @@
                 'rgba(75, 192, 192, 0.8)'
             ];
 
-            // Outer loop: iterate over year-months, inner loop: iterate over scenarios to build each dataset
             const allDatasets = scenarioLabels.map((scenarioLabel, si) => ({
                 label: scenarioLabel,
                 data: [],
@@ -339,7 +464,6 @@
                 }
             }
 
-            // Filter out any datasets where all values are null
             const validDatasets = allDatasets.filter(ds => ds.data.some(v => v !== null));
 
             monthlyChart.data.labels = displayLabels;
@@ -352,13 +476,102 @@
             monthlyChart.update();
         };
 
-        document.getElementById('updateChartBtn').addEventListener('click', updateChart);
-        const yearCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="year"]');
-        yearCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', updateChart);
+        function renderSummaryTable(data) {
+            const { scenarioLabels, totalData, origTotalData, enabledScenarios } = data;
+            const table = document.querySelector('.summary-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+
+            thead.innerHTML = '<tr><th>Metric</th>' + scenarioLabels.map(label => '<th>' + label + '</th>').join('') + '</tr>';
+
+            // Check if Original is in the display
+            const hasOriginal = scenarioLabels.includes('Original');
+
+            const rows = [
+                {
+                    label: 'Total Home kWh',
+                    values: scenarioLabels.map(label => totalData[label].totalHome.toFixed(1))
+                },
+                {
+                    label: 'Total Solar kWh',
+                    values: scenarioLabels.map(label => totalData[label].totalSolar.toFixed(1))
+                },
+                {
+                    label: 'Total Grid Usage (kWh)',
+                    values: scenarioLabels.map(label => totalData[label].totalFromGrid.toFixed(1))
+                },
+                {
+                    label: 'Grid Usage % of Home Total',
+                    values: scenarioLabels.map(label => totalData[label].gridPercentHome.toFixed(1) + '%')
+                },
+                {
+                    label: 'Grid Usage Relative to Original (kWh)',
+                    values: scenarioLabels.map(label => {
+                        const curr = totalData[label];
+                        const diff = curr.totalFromGrid - origTotalData.totalFromGrid;
+                        return (diff >= 0 ? '+' : '') + diff.toFixed(1);
+                    })
+                },
+                {
+                    label: 'Total Battery Usage (kWh)',
+                    values: scenarioLabels.map(label => totalData[label].totalBatteryUsage.toFixed(1))
+                },
+                {
+                    label: 'Battery Usage Relative to Original (kWh)',
+                    values: scenarioLabels.map(label => {
+                        const curr = totalData[label];
+                        const diff = curr.totalBatteryUsage - origTotalData.totalBatteryUsage;
+                        return (diff >= 0 ? '+' : '') + diff.toFixed(1);
+                    })
+                }
+            ];
+
+            tbody.innerHTML = rows.map(row =>
+                '<tr><td>' + row.label + '</td>' +
+                row.values.map(v => '<td>' + v + '</td>').join('') +
+                '</tr>'
+            ).join('');
+        }
+
+        function renderSummaryTabIfActive() {
+            const summaryTab = document.getElementById('summary-tab');
+            if (!summaryTab.classList.contains('active')) return;
+            getAllScenarioData().then(data => {
+                if (!data) return;
+                renderSummaryTable(data);
+            });
+        }
+
+        function switchTab(tabName) {
+            const tabBar = document.querySelector('.tab-bar');
+            tabBar.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                switchTab(btn.dataset.tab);
+                if (btn.dataset.tab === 'summary') {
+                    const data = await getAllScenarioData();
+                    if (!data) return;
+                    renderSummaryTable(data);
+                }
+            });
         });
-        document.querySelectorAll('.scenario-enabled, .scenario-powerwalls, .scenario-solar').forEach(el => el.addEventListener('change', updateChart));
-        document.querySelectorAll('.scenario-powerwalls, .scenario-solar').forEach(el => el.addEventListener('input', updateChart));
+
+        const refreshAll = async () => {
+            await updateChart();
+            renderSummaryTabIfActive();
+        };
+
+        document.querySelectorAll('.scenario-enabled, .scenario-powerwalls').forEach(el => el.addEventListener('change', refreshAll));
+        document.querySelectorAll('.scenario-solar').forEach(el => el.addEventListener('input', refreshAll));
+        document.querySelectorAll('input[id^="year"]').forEach(el => el.addEventListener('change', refreshAll));
 
         createMonthlyChart();
         updateChart();
