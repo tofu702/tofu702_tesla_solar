@@ -147,3 +147,17 @@ Goal: Build a page that shows simulation results for each month. It uses Scenari
 
 ## Notes
 * Re-read `openapi.json` and use the `battery_and_solar_simulator/monthly_data` end point
+
+# Step 15: Add "Summary View" To Monthly Simulator
+* Make the graph clearly below the controls so that it can use the full width (don't let the scenarios be to the left of the graph)
+* Add tab selector that switches between the graph and a summary table for total.
+* Each column in the summary table corresponds to one of the Enabled Scenarios
+* Have the following metrics in the summary table with one metric per row
+  * "Total Home kWh":  sum of `home_kwh` for all months under consideration (should be same for all columns)
+  * "Total Solar kWh": sum of `solar_energy_kwh` for all months under consideration
+  * "Total Grid Usage kWh": sum of `from_grid_kwh` for all months under consideration
+  * "Grid Usage % of Home Total": sum of `from_grid_kwh` / sum(`home_kwh`)
+  * "Grid Usage Relative to Original kWh": sum of `from_grid_kwh` for Scenario 1 relative to sum for this scenario
+  * "Total Battery Usage kWh": sum of `battery_usage_kwh`
+  * "Total Battery Relative to Original kWh": sum(`battery_usage_kwh`) for Scenario 1 relative to sum(`battery_usage_kwh`) for this scenario
+* 
